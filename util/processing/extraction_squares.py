@@ -1,12 +1,95 @@
 import numpy as np
 import pandas as pd
+import os
+import csv
 
-def square_stats(name_of_variables, max_time_steps, path):
-    if dataset == 'datasets_1h' or dataset == 'datasets_1h_EU':
+# Function to read variable names from a CSV file
+def read_variable_names(csv_file):
+    with open(csv_file, mode='r') as file:
+        reader = csv.DictReader(file)
+        variables = [row['variables'] for row in reader]
+    return variables
+
+# Function to read values from a specific column in a CSV file
+def read_column_values(csv_file, column_name):
+    with open(csv_file, mode='r') as file:
+        reader = csv.DictReader(file)
+        values = [row[column_name] for row in reader]
+    return values
+
+# Function to filter rows from one CSV based on values from another CSV
+def filter_rows(input_csv, output_csv, column_name, filter_values):
+    with open(input_csv, mode='r') as infile, open(output_csv, mode='w', newline='') as outfile:
+        reader = csv.DictReader(infile)
+        writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
+        
+        writer.writeheader()  # Write the header to the output file
+        for row in reader:
+            if row[column_name] in filter_values:
+                writer.writerow(row)
+
+def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels):
+
+    levels = levels['levels'].to_list()
+
+    variables = read_variable_names(variables_csv)
+    # List of storms and levels
+    storms = [f"{i}" for i in range(1, 97)]
+
+    # List of statistic types
+    stats = ["max", "mean", "min", "std"]
+
+    # Base directories for input CSV files
+    base_dir_csv1 = f"{path}data/datasets_{timestep}"
+    #if operating_system == 'mac':
+        #base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+        #print(base_dir_csv2)
+    #else:
+    base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+    print(base_dir_csv2)
+
+    output_base_dir = f"{path}{choosen_directory}/datasets_{timestep}_EU"
+
+    # Ensure output directory exists
+    os.makedirs(output_base_dir, exist_ok=True)
+
+    # Loop through variables, storms, levels, and stats
+    for variable in variables:
+        for storm in storms:
+            for level in levels:
+                for stat in stats:
+                    csv_file1 = os.path.join(base_dir_csv1, variable, f"storm_{storm}", f"{stat}_{storm}_{level}.csv")
+                    if timestep == '1h':
+                        csv_file2 = os.path.join(base_dir_csv2, f"storm_{storm}.csv")
+                    else:
+                        csv_file2 = os.path.join(base_dir_csv2, f"storm_{storm}.csv")
+                    output_file = os.path.join(output_base_dir, variable, f"storm_{storm}", f"{stat}_{storm}_{level}.csv")
+
+                    # Create directories for the output file if they do not exist
+                    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+                    # Only read and filter if the CSV files exist
+                    if os.path.exists(csv_file1) and os.path.exists(csv_file2):
+                        # Read the column values from the first CSV
+                        filter_values = read_column_values(csv_file2, 'timestep')
+
+                        # Filter rows from the second CSV and write to the output CSV
+                        filter_rows(csv_file1, output_file, '', filter_values)
+
+                        print(f"Filtered rows for {variable}, {storm}, level {level}, stat {stat} have been written to {output_file}")
+                    #else:
+                        #print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
+
+
+def X_y_datasets_EU(name_of_variables, max_time_steps, path, dataset):
+    if dataset == 'datasets_1h_EU':
         max_time_steps = 185
-    else:
+    elif dataset == 'datasets_3h_EU':
         max_time_steps = 62
     #max_time_steps = 185 # max_time_steps[col_max].max()+1
+    else :
+        print('wrong typo')
+        return
 
     def split_variable_level(variable_with_level):
         parts = variable_with_level.rsplit('_', 1)
@@ -88,18 +171,32 @@ def square_stats(name_of_variables, max_time_steps, path):
         except ValueError:
             print(f'Storm {i} is empty.')
 
-    # check if storms in tracks_1h_EU are continuous with the column timestep
-    index_storm_EU = []
-    for i in range(0, 96):
-        locals()[f'storm_{i+1}'] = pd.read_csv(f'{path}pre_processing/tracks/ALL_TRACKS/tracks_1h_EU/storm_{i+1}.csv')
-        try:
-            if locals()[f'storm_{i+1}']['timestep'].values.max() -locals()[f'storm_{i+1}']['timestep'].values.min() == len(locals()[f'storm_{i+1}'])-1:
-                print(f'Storm {i} is continuous.')
-                index_storm_EU.append(i)
-            else:
-                print(f'Storm {i} is not continuous.')
-        except ValueError:
-            print(f'Storm {i} is empty.')
+    storm_index_test_valid = [0, 3, 4, 11, 13, 14, 17, 20, 25, 27, 28, 29, 31, 35, 53, 54, 57, 64, 69, 71, 75, 81, 85, 86, 87, 90, 92, 93, 95]
+    storm_index_validation = [3, 4, 11, 17, 31, 35, 54, 86, 87, 92]
+    storm_index_all = range(96)
+
+    # remove index of storm in the test set from the validation set
+
+    storm_index_test = [x for x in storm_index_test_valid if x not in storm_index_validation]
+
+    # remove index of storm in the valdation set from the test set
+
+    storm_index_validation = [x for x in storm_index_validation if x not in storm_index_test]
+
+    # remove index of storm in the training set from the validation set and validation set
+
+    storm_index_training = [x for x in storm_index_all if x not in storm_index_test_valid]
+
+    print(storm_index_validation, storm_index_test)
+    print(storm_index_training)
+
+    storm_index_training = [x for x in storm_index_training if x in index_storm_EU]
+    storm_index_validation = [x for x in storm_index_validation if x in index_storm_EU]
+    storm_index_test = [x for x in storm_index_test if x in index_storm_EU]
+
+    print("Validation indices:", storm_index_validation)
+    print("Test indices:", storm_index_test)
+    print("Training indices:", storm_index_training)
 
     # extract the data for the test set and the validation set
     #number_storms_EU =  range(len(index_storm_EU))
@@ -114,7 +211,7 @@ def square_stats(name_of_variables, max_time_steps, path):
 
     return X_train, X_test, X_validation, y_train, y_test, y_validation
 
-def square_stats_EU(EU_border, tracks, choosen_directory, path):
+def square_EU(EU_border, tracks, choosen_directory, path):
 
     # now cut in the folder EU_border all the storms that are not in the EU
 
@@ -151,8 +248,12 @@ def square_stats_EU(EU_border, tracks, choosen_directory, path):
         # drop the columns center_lat and center_lon
         storm.drop(['center_lat', 'center_lon'], axis=1, inplace=True)
 
+        # Create the directory if it doesn't exist
+        if not os.path.exists(f'{path}{choosen_directory}/{tracks}_EU/'):
+            os.makedirs(f'{path}{choosen_directory}/{tracks}_EU/')
+
         # Save the filtered DataFrame to the same file or a new file
-        storm.to_csv(f'{choosen_directory}/{tracks}_EU/storm_{i}.csv', index=False)
+        storm.to_csv(f'{path}{choosen_directory}/{tracks}_EU/storm_{i}.csv', index=False)
 
         '''for j in range(0,len_storm):
             if storm['center_lat'][j] < EU_border['south'][0] or storm['center_lat'][j] > EU_border['north'][0] or storm['center_lon'][j] < EU_border['west'][0] or storm['center_lon'][j] > EU_border['east'][0]:
@@ -169,17 +270,6 @@ def square_stats_EU(EU_border, tracks, choosen_directory, path):
                 print(f'center_lat: {row["center_lat"]}')
                 print(f'center_lon: {row["center_lon"]}')'''
 
-def interpolate_vector(data, factor):
-    n = len(data)
-    # X interpolation points. For factor=4, it is [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, ...]
-    x = np.linspace(0, n - 1, (n - 1) * factor + 1)
-    # Alternatively:
-    # x = np.arange((n - 1) * factor + 1) / factor
-    # X data points: [0, 1, 2, ...]
-    xp = np.arange(n)
-    # Interpolate
-    return np.round(np.interp(x, xp, np.asarray(data)),6)
-
 def hourly_steps (factor,choosen_directory, path):
     for i in range(1,97):
         locals()['tracks_'+str(i)] = pd.read_csv(f'{path}pre_processing/tracks/ALL_TRACKS/tracks_3h/storm_{i}.csv')
@@ -189,6 +279,16 @@ def hourly_steps (factor,choosen_directory, path):
         locals()['lat_south_'+str(i)] = locals()['tracks_'+str(i)]['lat_south']
 
     # interpolation between 2 points in a vector
+    def interpolate_vector(data, factor):
+        n = len(data)
+        # X interpolation points. For factor=4, it is [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, ...]
+        x = np.linspace(0, n - 1, (n - 1) * factor + 1)
+        # Alternatively:
+        # x = np.arange((n - 1) * factor + 1) / factor
+        # X data points: [0, 1, 2, ...]
+        xp = np.arange(n)
+        # Interpolate
+        return np.round(np.interp(x, xp, np.asarray(data)),6)
 
     # apply the interpolation to each longitude and latitude vectors
 
@@ -313,8 +413,13 @@ def hourly_steps (factor,choosen_directory, path):
 
         # save the interpolated dataframes to csv files
 
+            # Create the directory if it doesn't exist
+    if not os.path.exists(f'{path}{choosen_directory}/tracks_1h/'):
+        os.makedirs(f'{path}{choosen_directory}/tracks_1h/')
+
+
     for i in range(1,97):
-        locals()['tracks_'+str(i)+'_interp'].to_csv(f'{choosen_directory}/tracks_1h/storm_{i}.csv',index=False)
+        locals()['tracks_'+str(i)+'_interp'].to_csv(f'{path}{choosen_directory}/tracks_1h/storm_{i}.csv',index=False)
 
 
 

@@ -2,14 +2,6 @@ import pandas as pd
 import numpy as np
 import os
 from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv1D, LSTM, Dense, Dropout
-import shap
-import optuna
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, mean_absolute_percentage_error
 
 masking_value = 0#2**0.5
 
