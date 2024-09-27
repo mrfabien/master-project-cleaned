@@ -1,0 +1,3 @@
+lon_center,lat_center,lon_ext,lat_ext
+-12,75,-16,79
+71,75,75,79

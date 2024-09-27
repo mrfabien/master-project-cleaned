@@ -1,0 +1,4 @@
+data/land_sea_mask/*
+pre_processing/maps/QGIS/layers/*
+pre_processing/maps/QGIS/temp_layer/*
+pre_processing/maps/QGIS/temp_temp/*
