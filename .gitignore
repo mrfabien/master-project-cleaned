@@ -1,4 +1,5 @@
-data/land_sea_mask/*
+data/land_sea_mask_test/*
 pre_processing/maps/QGIS/layers/*
 pre_processing/maps/QGIS/temp_layer/*
 pre_processing/maps/QGIS/temp_temp/*
+data/gust_test/*
