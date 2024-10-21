@@ -3,12 +3,12 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 
-operating_system = 'win'
+'''operating_system = 'win'
 
 if operating_system == 'win':
     os.chdir('C:/Users/fabau/OneDrive/Documents/GitHub/master-project-cleaned/')
 else:
-    os.chdir('/Users/fabianaugsburger/Documents/GitHub/master-project-cleaned/')
+    os.chdir('/Users/fabianaugsburger/Documents/GitHub/master-project-cleaned/')'''
 
 # go back to scratch, dates are not correct
 
@@ -299,3 +299,42 @@ def interpolate_longitude(lon_list, factor):
     # Append the last value
     interp_list.append(lon_list[-1])
     return interp_list
+
+def extract_first_step(storm_dates, path_tracks, folder, number_of_storms):
+    first_steps = []
+    for storm in range(1,number_of_storms+1):
+        i = storm
+        storm = pd.read_csv(f'{path_tracks}{folder}/storm_{storm}.csv')
+        # make the column step croissant
+        storm = storm.sort_values(by='step')
+        try:
+            first_step = storm['step'].iloc[0]
+            first_steps.append(first_step)
+        except:
+            first_step = -1
+            first_steps.append(first_step)
+            print(f'Storm {i} is empty')
+
+    storm_dates = pd.read_csv(storm_dates)
+    storm_dates['first_step_in_eu'] = first_steps
+
+    # this code isn't consistant, because it checks by order of index in the 1st part, and the second it checks by storm index
+
+    landfall_eu = []
+    for storm in range(1,len(storm_dates)+1):
+        start_date = storm_dates[storm_dates['storm_index'] == storm]['start_date']
+        first_step_in_eu = storm_dates[storm_dates['storm_index'] == storm]['first_step_in_eu']
+
+        if first_step_in_eu.values == -1:
+            landfall_eu_temp = -1 #landfall_eu.at[storm] = -1
+        else:
+            landfall_eu_temp = pd.to_datetime(start_date) + first_step_in_eu*np.timedelta64(1, 'h')
+            # reconverting the date to the format 'YYYY-MM-DDTHH:MM:SS'
+            landfall_eu_temp = landfall_eu_temp.dt.strftime('%Y-%m-%dT%H:%M:%S')
+            landfall_eu_temp = landfall_eu_temp.values[0]
+        
+        landfall_eu.append(landfall_eu_temp)
+
+    storm_dates['landfall_eu'] = landfall_eu
+        
+    return storm_dates, pd.DataFrame(first_steps), landfall_eu
