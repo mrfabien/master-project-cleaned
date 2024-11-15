@@ -315,7 +315,8 @@ def extract_first_step(storm_dates, path_tracks, folder, number_of_storms):
             first_steps.append(first_step)
             print(f'Storm {i} is empty')
 
-    storm_dates = pd.read_csv(storm_dates)
+    # uncomment this line if you want to use this function as a standalone function
+    #storm_dates = pd.read_csv(storm_dates)
     storm_dates['first_step_in_eu'] = first_steps
 
     # this code isn't consistant, because it checks by order of index in the 1st part, and the second it checks by storm index
@@ -338,3 +339,14 @@ def extract_first_step(storm_dates, path_tracks, folder, number_of_storms):
     storm_dates['landfall_eu'] = landfall_eu
         
     return storm_dates, pd.DataFrame(first_steps), landfall_eu
+
+def process_dates_complete(original_storm_dates, degree, path_tracks, factor):
+    
+    storm_dates = process_dates(original_storm_dates, degree, path_tracks, factor)
+    storm_dates, first_steps, landfall_eu = extract_first_step(storm_dates, path_tracks, 'tracks_1h_EU', len(storm_dates))
+
+    storm_dates['nb_steps'] = storm_dates['nb_steps'].astype(int)
+    storm_dates['total_steps_1h'] = storm_dates['nb_steps']*factor-2
+    storm_dates['nb_steps_1h_before_landfall'] = storm_dates['first_step_in_eu']-1
+
+    return storm_dates, first_steps, landfall_eu
