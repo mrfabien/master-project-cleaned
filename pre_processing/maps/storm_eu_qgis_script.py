@@ -5,6 +5,9 @@ Group :
 With QGIS : 33411
 """
 
+import sys
+#sys.path.append('/Applications/QGIS-LTR.app/Contents/Resources/python')
+
 from qgis.core import QgsProcessing
 from qgis.core import QgsProcessingAlgorithm
 from qgis.core import QgsProcessingMultiStepFeedback
@@ -13,7 +16,7 @@ from qgis.core import QgsProcessingParameterFileDestination
 from qgis.core import QgsProcessingParameterFeatureSink
 from qgis.core import QgsCoordinateReferenceSystem
 from qgis.core import QgsExpression
-import processing
+#import processing
 
 
 class Storm_eu_square_modelleur(QgsProcessingAlgorithm):

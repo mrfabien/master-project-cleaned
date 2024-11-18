@@ -193,8 +193,11 @@ def X_y_datasets_EU(name_of_variables, max_time_steps, path, dataset):
             #max_time_steps = max(len(series) for series in storm_data)
 
         # Pad the data to have the same length of time steps
-        storm_data_padded = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data]
-        storm_data_padded_y = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data_y]
+        if max_time_steps == -1:
+            print("Storm didn't land on EU soil, so it will be skipped.")
+        else:
+            storm_data_padded = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data]
+            storm_data_padded_y = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data_y]
 
         #storm_data_padded = []
         #for series in storm_data:
@@ -265,11 +268,13 @@ def X_y_datasets_EU(name_of_variables, max_time_steps, path, dataset):
 
     return X_train, X_test, X_validation, y_train, y_test, y_validation
 
-def X_y_datasets_non_EU(name_of_variables, max_time_steps, path, dataset):
+def X_y_datasets_non_EU(name_of_variables, storm_dates, path, dataset):
     if dataset == 'datasets_1h_non_EU':
-        max_time_steps = 185
+        storm_dates['nb_steps_1h_before_landfall'] = storm_dates['nb_steps_1h_before_landfall'].astype(int)
+        max_time_steps = storm_dates['nb_steps_1h_before_landfall'].max()
     elif dataset == 'datasets_3h_non_EU':
-        max_time_steps = 62
+        print('This dataset is not available')
+        return
     else:
         print('Invalid dataset name')
         return
@@ -296,7 +301,7 @@ def X_y_datasets_non_EU(name_of_variables, max_time_steps, path, dataset):
             if var_name == 'instantaneous_10m_wind_gust':
                 try:
                     for stat in stats:
-                        df = pd.read_csv(f'{path}/data/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv')
+                        df = pd.read_csv(f'{path}/data/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv')#{path}
                         if df.shape[0] > 0:  # Check if the csv is not empty
                             storm_series = df.loc[:, '0'].values
                             storm_data_y.append(storm_series)
@@ -308,7 +313,7 @@ def X_y_datasets_non_EU(name_of_variables, max_time_steps, path, dataset):
             else:
                 try:
                     for stat in stats:
-                        df = pd.read_csv(f'{path}/data/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv')
+                        df = pd.read_csv(f'{path}/data/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv')#{path}
                         if df.shape[0] > 0:  # Check if the csv is not empty
                             storm_series = df.loc[:, '0'].values
                             storm_data.append(storm_series)
@@ -319,8 +324,11 @@ def X_y_datasets_non_EU(name_of_variables, max_time_steps, path, dataset):
                     storm_data.append(np.array([]))  # Append an empty array if the variable is not found
 
         # Pad the data to have the same length of time steps
-        storm_data_padded = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data]
-        storm_data_padded_y = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data_y]
+        if max_time_steps == -1:
+            print("Storm didn't land on EU soil, so it will be skipped.")
+        else:
+            storm_data_padded = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data]
+            storm_data_padded_y = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data_y]
 
         data_list.append(np.stack(storm_data_padded, axis=1))
         data_list_y.append(np.stack(storm_data_padded_y, axis=1))
@@ -335,7 +343,7 @@ def X_y_datasets_non_EU(name_of_variables, max_time_steps, path, dataset):
     # Check if storms are continuous (outside EU soil)
     index_storm_non_EU = []
     for i in range(0, 96):
-        locals()[f'storm_{i+1}'] = pd.read_csv(f'{path}pre_processing/tracks/ALL_TRACKS/tracks_1h_non_EU/storm_{i+1}.csv')
+        locals()[f'storm_{i+1}'] = pd.read_csv(f'{path}/pre_processing/tracks/ALL_TRACKS/tracks_1h_non_EU/storm_{i+1}.csv') #{path}
         try:
             if locals()[f'storm_{i+1}']['step'].values.max() - locals()[f'storm_{i+1}']['step'].values.min() == len(locals()[f'storm_{i+1}']) - 1:
                 print(f'Storm {i} is continuous.')
