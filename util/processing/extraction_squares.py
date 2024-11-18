@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import csv
+import random
 
 # Function to read variable names from a CSV file
 def read_variable_names(csv_file):
@@ -28,7 +29,42 @@ def filter_rows(input_csv, output_csv, column_name, filter_values):
             if row[column_name] in filter_values:
                 writer.writerow(row)
 
-def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels):
+# Function to filter rows from one CSV based on values from another CSV (non-matching rows)
+def filter_rows_exclude(input_csv, output_csv, column_name, exclude_values):
+    with open(input_csv, mode='r') as infile, open(output_csv, mode='w', newline='') as outfile:
+        reader = csv.DictReader(infile)
+        writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
+        
+        writer.writeheader()  # Write the header to the output file
+        for row in reader:
+            if row[column_name] not in exclude_values:  # Only include rows NOT in exclude_values
+                writer.writerow(row)
+
+def split_storm_numbers(storm_numbers, test_valid_percentage=0.3, seed=42):
+    # Ensure reproducibility
+    random.seed(seed)
+
+    # Shuffle the list for randomness
+    random.shuffle(storm_numbers)
+
+    # Calculate the number of storms for test and valid sets
+    total_storms = len(storm_numbers)
+    test_valid_count = int(total_storms * test_valid_percentage)
+    test_count = valid_count = test_valid_count // 2
+
+    # Select for storm_test
+    storm_test = storm_numbers[:test_count]
+
+    # Select for storm_valid
+    storm_valid = storm_numbers[test_count:test_count + valid_count]
+
+    # The remaining go into storm_all
+    storm_all = storm_numbers[test_count + valid_count:]
+
+    return storm_all, storm_test, storm_valid
+
+
+def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels, operating_sys):
 
     levels = levels['levels'].to_list()
 
@@ -39,16 +75,22 @@ def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels
     # List of statistic types
     stats = ["max", "mean", "min", "std"]
 
-    # Base directories for input CSV files
-    base_dir_csv1 = f"{path}data/datasets_{timestep}"
-    #if operating_system == 'mac':
-        #base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
-        #print(base_dir_csv2)
-    #else:
-    base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
-    print(base_dir_csv2)
+    if operating_sys == 'curnagl':
+        base_dir_csv1 = f"{path}curnagl/DATASETS/datasets_{timestep}"
+        print('Taking data from', base_dir_csv1)
+        base_dir_csv2 = f"{path}cleaner_version/pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+        print('With condition based on', base_dir_csv2)
+    else:
+        # Base directories for input CSV files
+        base_dir_csv1 = f"{path}data/datasets_{timestep}"
+        #if operating_system == 'mac':
+            #base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+            #print(base_dir_csv2)
+        #else:
+        base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+        print(base_dir_csv2)
 
-    output_base_dir = f"{path}{choosen_directory}/datasets_{timestep}_EU"
+    output_base_dir = f"{path}{choosen_directory}datasets_{timestep}_EU"
 
     # Ensure output directory exists
     os.makedirs(output_base_dir, exist_ok=True)
@@ -80,18 +122,7 @@ def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels
                     #else:
                         #print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
 
-# Function to filter rows from one CSV based on values from another CSV (non-matching rows)
-def filter_rows_exclude(input_csv, output_csv, column_name, exclude_values):
-    with open(input_csv, mode='r') as infile, open(output_csv, mode='w', newline='') as outfile:
-        reader = csv.DictReader(infile)
-        writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
-        
-        writer.writeheader()  # Write the header to the output file
-        for row in reader:
-            if row[column_name] not in exclude_values:  # Only include rows NOT in exclude_values
-                writer.writerow(row)
-
-def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, levels):
+def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, levels, operating_sys):
     levels = levels['levels'].to_list()
 
     variables = read_variable_names(variables_csv)
@@ -101,12 +132,23 @@ def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, le
     # List of statistic types
     stats = ["max", "mean", "min", "std"]
 
-    # Base directories for input CSV files
-    base_dir_csv1 = f"{path}data/datasets_{timestep}"
-    base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
-    print(base_dir_csv2)
+    if operating_sys == 'curnagl':
+        base_dir_csv1 = f"{path}curnagl/DATASETS/datasets_{timestep}"
+        print('Taking data from', base_dir_csv1)
+        base_dir_csv2 = f"{path}cleaner_version/pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+        print('With condition based on', base_dir_csv2)
+    else:
+        # Base directories for input CSV files
+        base_dir_csv1 = f"{path}data/datasets_{timestep}"
+        #if operating_system == 'mac':
+            #base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+            #print(base_dir_csv2)
+        #else:
+        base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+        print(base_dir_csv2)
 
-    output_base_dir = f"{path}{choosen_directory}/datasets_{timestep}_non_EU"
+
+    output_base_dir = f"{path}{choosen_directory}datasets_{timestep}_non_EU"
 
     # Ensure output directory exists
     os.makedirs(output_base_dir, exist_ok=True)
@@ -133,9 +175,9 @@ def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, le
 
                         print(f"Filtered non-EU rows for {variable}, {storm}, level {level}, stat {stat} have been written to {output_file}")
                     #else:
-                        #print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
+                        #print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files"
 
-def X_y_datasets_EU(name_of_variables, storm_dates, path, dataset):
+def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU, dataset, continuous_storms=True):
     if dataset == 'datasets_1h_EU':
         storm_dates['total_steps_1h'] = storm_dates['total_steps_1h'].astype(int)
         storm_dates['nb_steps_1h_before_landfall'] = storm_dates['nb_steps_1h_before_landfall'].astype(int)
@@ -170,7 +212,7 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path, dataset):
             if var_name == 'instantaneous_10m_wind_gust':
                 try:
                     for stat in stats:
-                        df = pd.read_csv(f'{path}/data/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv') #locals()[f'mean_{var_name}_{level}']
+                        df = pd.read_csv(f'{path_data}/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv') #locals()[f'mean_{var_name}_{level}']
                         if df.shape[0] > 0:  # Check if the csv is not empty
                             storm_series = df.loc[:, '0'].values
                             storm_data_y.append(storm_series)
@@ -182,7 +224,7 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path, dataset):
             else:
                 try:
                     for stat in stats:
-                        df = pd.read_csv(f'{path}/data/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv') #locals()[f'mean_{var_name}_{level}']
+                        df = pd.read_csv(f'{path_data}/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv') #locals()[f'mean_{var_name}_{level}']
                         if df.shape[0] > 0:  # Check if the csv is not empty
                             storm_series = df.loc[:, '0'].values
                             storm_data.append(storm_series)
@@ -221,42 +263,58 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path, dataset):
     # check if storms in tracks_1h_EU are continuous with the column timestep
     index_storm_EU = []
     for i in range(0, 96):
-        locals()[f'storm_{i+1}'] = pd.read_csv(f'{path}pre_processing/tracks/ALL_TRACKS/tracks_1h_EU/storm_{i+1}.csv')
+        locals()[f'storm_{i+1}'] = pd.read_csv(f'{path_tracks_1h_EU}/storm_{i+1}.csv')
         try:
             if locals()[f'storm_{i+1}']['step'].values.max() -locals()[f'storm_{i+1}']['step'].values.min() == len(locals()[f'storm_{i+1}'])-1:
                 print(f'Storm {i} is continuous.')
                 index_storm_EU.append(i)
             else:
                 print(f'Storm {i} is not continuous.')
+                if continuous_storms == False:
+                    index_storm_EU.append(i)
         except ValueError:
             print(f'Storm {i} is empty.')
-
-    storm_index_test_valid = [0, 3, 4, 11, 13, 14, 17, 20, 25, 27, 28, 29, 31, 35, 53, 54, 57, 64, 69, 71, 75, 81, 85, 86, 87, 90, 92, 93, 95]
-    storm_index_validation = [3, 4, 11, 17, 31, 35, 54, 86, 87, 92]
-    storm_index_all = range(96)
-
+    # OLD WAY
+    #storm_index_test_valid = [0, 3, 4, 11, 13, 14, 17, 20, 25, 27, 28, 29, 31, 35, 53, 54, 57, 64, 69, 71, 75, 81, 85, 86, 87, 90, 92, 93, 95]
+    #storm_index_validation = [3, 4, 11, 17, 31, 35, 54, 86, 87, 92]
+    #storm_index_all = range(96)
+    
     # remove index of storm in the test set from the validation set
 
-    storm_index_test = [x for x in storm_index_test_valid if x not in storm_index_validation]
+    #storm_index_test = [x for x in storm_index_test_valid if x not in storm_index_validation]
 
     # remove index of storm in the valdation set from the test set
 
-    storm_index_validation = [x for x in storm_index_validation if x not in storm_index_test]
+    #storm_index_validation = [x for x in storm_index_validation if x not in storm_index_test]
 
     # remove index of storm in the training set from the validation set and validation set
 
-    storm_index_training = [x for x in storm_index_all if x not in storm_index_test_valid]
+    #storm_index_training = [x for x in storm_index_all if x not in storm_index_test_valid]
 
-    print(storm_index_validation, storm_index_test)
-    print(storm_index_training)
+    #print(storm_index_validation, storm_index_test)
+    #print(storm_index_training)
 
-    storm_index_training = [x for x in storm_index_training if x in index_storm_EU]
-    storm_index_validation = [x for x in storm_index_validation if x in index_storm_EU]
-    storm_index_test = [x for x in storm_index_test if x in index_storm_EU]
+    #storm_index_training = [x for x in storm_index_training if x in index_storm_EU]
+    #storm_index_test = [x for x in storm_index_test if x in index_storm_EU]
+    #storm_index_validation = [x for x in storm_index_validation if x in index_storm_EU]
 
-    print("Validation indices:", storm_index_validation)
-    print("Test indices:", storm_index_test)
-    print("Training indices:", storm_index_training)
+    #print("Validation indices:", storm_index_validation)
+    #print("Test indices:", storm_index_test)
+    #print("Training indices:", storm_index_training)
+
+    # NEW WAY
+
+    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_EU)
+
+    # order the index of the storms
+
+    storm_index_training.sort()
+    storm_index_test.sort()
+    storm_index_validation.sort()
+
+    print("Storm Training:", storm_index_training)
+    print("Storm Test:", storm_index_test)
+    print("Storm Valid:", storm_index_validation)                                                           
 
     # extract the data for the test set and the validation set
     #number_storms_EU =  range(len(index_storm_EU))
@@ -269,12 +327,14 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path, dataset):
     y_validation = y_all_3d[storm_index_validation,:,:]
     y_train = y_all_3d[storm_index_training,:,:]
 
+    print("Order of the stats : 'max', 'min', 'mean', 'std'")
+
     return X_train, X_test, X_validation, y_train, y_test, y_validation
 
-def X_y_datasets_non_EU(name_of_variables, storm_dates, path, dataset):
+def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_non_EU, dataset, continuous_storms=True):
     if dataset == 'datasets_1h_non_EU':
         storm_dates['nb_steps_1h_before_landfall'] = storm_dates['nb_steps_1h_before_landfall'].astype(int)
-        max_time_steps = storm_dates['nb_steps_1h_before_landfall'].max()
+        max_time_steps = storm_dates['nb_steps_1h_before_landfall'].max()+1
     elif dataset == 'datasets_3h_non_EU':
         print('This dataset is not available')
         return
@@ -304,7 +364,7 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path, dataset):
             if var_name == 'instantaneous_10m_wind_gust':
                 try:
                     for stat in stats:
-                        df = pd.read_csv(f'{path}/data/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv')#{path}
+                        df = pd.read_csv(f'{path_data}/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv')#{path}
                         if df.shape[0] > 0:  # Check if the csv is not empty
                             storm_series = df.loc[:, '0'].values
                             storm_data_y.append(storm_series)
@@ -316,7 +376,7 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path, dataset):
             else:
                 try:
                     for stat in stats:
-                        df = pd.read_csv(f'{path}/data/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv')#{path}
+                        df = pd.read_csv(f'{path_data}/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv')#{path}
                         if df.shape[0] > 0:  # Check if the csv is not empty
                             storm_series = df.loc[:, '0'].values
                             storm_data.append(storm_series)
@@ -345,33 +405,57 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path, dataset):
 
     # Check if storms are continuous (outside EU soil)
     index_storm_non_EU = []
-    for i in range(0, 96):
-        locals()[f'storm_{i+1}'] = pd.read_csv(f'{path}/pre_processing/tracks/ALL_TRACKS/tracks_1h_non_EU/storm_{i+1}.csv') #{path}
+    last_step_before_eu = []
+    for i in range(1, 97):
+        locals()[f'storm_{i}'] = pd.read_csv(f'{path_tracks_1h_non_EU}/storm_{i}.csv') #{path}
         try:
-            if locals()[f'storm_{i+1}']['step'].values.max() - locals()[f'storm_{i+1}']['step'].values.min() == len(locals()[f'storm_{i+1}']) - 1:
+            if locals()[f'storm_{i}']['step'].values.max() - locals()[f'storm_{i}']['step'].values.min() == len(locals()[f'storm_{i}']) - 1 and storm_dates.loc[storm_dates['storm_index'] == i, 'first_step_in_eu'].values[0] != -1 and locals()[f'storm_{i}']['step'].values.min() == 0:
                 print(f'Storm {i} is continuous.')
-                index_storm_non_EU.append(i)
+                index_storm_non_EU.append(i-1)
+                last_step_before_eu.append(locals()[f'storm_{i}']['step'].values.max())
             else:
-                print(f'Storm {i} is not continuous.')
+                print(f"Storm {i} is not continuous or doesn't land in EU.")
+                #last_step_before_eu.append(0)
+                if continuous_storms == False and storm_dates.loc[storm_dates['storm_index'].astype(int) == i, 'first_step_in_eu'].values[0] != -1 and locals()[f'storm_{i}']['step'].values.min() == 0:
+                    index_storm_non_EU.append(i)
+                    last_step_before_eu.append(storm_dates.loc[storm_dates['storm_index'] == i, 'nb_steps_1h_before_landfall'].values[0]) 
+                else:
+                    last_step_before_eu.append(0)
         except ValueError:
-            print(f'Storm {i} is empty.')
+            print(f'Storm {i} is empty or started in the EU.')
+            last_step_before_eu.append(0)
 
     # Indices for the test, validation, and training sets
-    storm_index_test_valid = [0, 3, 4, 11, 13, 14, 17, 20, 25, 27, 28, 29, 31, 35, 53, 54, 57, 64, 69, 71, 75, 81, 85, 86, 87, 90, 92, 93, 95]
-    storm_index_validation = [3, 4, 11, 17, 31, 35, 54, 86, 87, 92]
-    storm_index_all = range(96)
+    # OLD WAY
+    #storm_index_test_valid = [0, 3, 4, 11, 13, 14, 17, 20, 25, 27, 28, 29, 31, 35, 53, 54, 57, 64, 69, 71, 75, 81, 85, 86, 87, 90, 92, 93, 95]
+    #storm_index_validation = [3, 4, 11, 17, 31, 35, 54, 86, 87, 92]
+    #storm_index_all = range(96)
 
-    storm_index_test = [x for x in storm_index_test_valid if x not in storm_index_validation]
-    storm_index_validation = [x for x in storm_index_validation if x not in storm_index_test]
-    storm_index_training = [x for x in storm_index_all if x not in storm_index_test_valid]
+    #storm_index_test = [x for x in storm_index_test_valid if x not in storm_index_validation]
+    #storm_index_validation = [x for x in storm_index_validation if x not in storm_index_test]
+    #storm_index_training = [x for x in storm_index_all if x not in storm_index_test_valid]
 
-    storm_index_training = [x for x in storm_index_training if x in index_storm_non_EU]
-    storm_index_validation = [x for x in storm_index_validation if x in index_storm_non_EU]
-    storm_index_test = [x for x in storm_index_test if x in index_storm_non_EU]
+    #storm_index_training = [x for x in storm_index_training if x in index_storm_non_EU]
+    #storm_index_validation = [x for x in storm_index_validation if x in index_storm_non_EU]
+    #storm_index_test = [x for x in storm_index_test if x in index_storm_non_EU]
 
-    print("Validation indices:", storm_index_validation)
-    print("Test indices:", storm_index_test)
-    print("Training indices:", storm_index_training)
+    #print("Validation indices:", storm_index_validation)
+    #print("Test indices:", storm_index_test)
+    #print("Training indices:", storm_index_training)
+
+    # NEW WAY
+
+    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_non_EU)
+
+    # order the index of the storms
+
+    storm_index_training.sort()
+    storm_index_test.sort()
+    storm_index_validation.sort()
+                                                                  
+    print("Storm Training:", storm_index_training)
+    print("Storm Test:", storm_index_test)
+    print("Storm Valid:", storm_index_validation)             
 
     # Extract the data for the test set and the validation set
     X_test = X_all_3d[storm_index_test,:,:]
@@ -382,8 +466,9 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path, dataset):
     y_validation = y_all_3d[storm_index_validation,:,:]
     y_train = y_all_3d[storm_index_training,:,:]
 
-    return X_train, X_test, X_validation, y_train, y_test, y_validation
+    print("Order of the stats : 'max', 'min', 'mean', 'std'")
 
+    return X_train, X_test, X_validation, y_train, y_test, y_validation, y_all_3d, last_step_before_eu
 
 def square_EU(EU_border, tracks, choosen_directory, path):
 
