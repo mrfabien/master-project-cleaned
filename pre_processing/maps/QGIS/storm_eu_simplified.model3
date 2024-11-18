@@ -816,7 +816,7 @@
         <Option type="List" name="FORMULA">
           <Option type="Map">
             <Option value="2" type="int" name="source"/>
-            <Option value="round(lon_west + 360,6)" type="QString" name="static_value"/>
+            <Option value="round(if(lon_west&lt;0,lon_west + 360,lon_west),6)" type="QString" name="static_value"/>
           </Option>
         </Option>
         <Option type="List" name="INPUT">
@@ -881,7 +881,7 @@
         <Option type="List" name="FORMULA">
           <Option type="Map">
             <Option value="2" type="int" name="source"/>
-            <Option value="round(lon_east + 360,6)" type="QString" name="static_value"/>
+            <Option value="round(if(lon_east&lt;0,lon_east + 360,lon_east),6)" type="QString" name="static_value"/>
           </Option>
         </Option>
         <Option type="List" name="INPUT">
