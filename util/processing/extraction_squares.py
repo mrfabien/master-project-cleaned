@@ -135,14 +135,17 @@ def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, le
                     #else:
                         #print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
 
-def X_y_datasets_EU(name_of_variables, max_time_steps, path, dataset):
+def X_y_datasets_EU(name_of_variables, storm_dates, path, dataset):
     if dataset == 'datasets_1h_EU':
-        max_time_steps = 185
+        storm_dates['total_steps_1h'] = storm_dates['total_steps_1h'].astype(int)
+        storm_dates['nb_steps_1h_before_landfall'] = storm_dates['nb_steps_1h_before_landfall'].astype(int)
+
+        max_time_steps = (storm_dates['total_steps_1h']-storm_dates['nb_steps_1h_before_landfall']).max()
     elif dataset == 'datasets_3h_EU':
-        max_time_steps = 62
-    #max_time_steps = 185 # max_time_steps[col_max].max()+1
-    else :
-        print('wrong typo')
+        print('This dataset is not available')
+        return
+    else:
+        print('Invalid dataset name')
         return
 
     def split_variable_level(variable_with_level):
