@@ -50,7 +50,10 @@ def split_storm_numbers(storm_numbers, test_valid_percentage=0.3, seed=42):
     # Calculate the number of storms for test and valid sets
     total_storms = len(storm_numbers)
     test_valid_count = int(total_storms * test_valid_percentage)
-    test_count = valid_count = test_valid_count // 2
+    
+    # Split test_valid_count between test and valid sets
+    test_count = test_valid_count // 2
+    valid_count = test_valid_count - test_count  # Ensure the total count matches test_valid_count
 
     # Select for storm_test
     storm_test = storm_numbers[:test_count]
@@ -58,7 +61,7 @@ def split_storm_numbers(storm_numbers, test_valid_percentage=0.3, seed=42):
     # Select for storm_valid
     storm_valid = storm_numbers[test_count:test_count + valid_count]
 
-    # The remaining go into storm_all
+    # The remaining go into storm_all (training set)
     storm_all = storm_numbers[test_count + valid_count:]
 
     return storm_all, storm_test, storm_valid
@@ -186,6 +189,9 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
     elif dataset == 'datasets_3h_EU':
         print('This dataset is not available')
         return
+    elif dataset == 'datasets_1h':
+        storm_dates['total_steps_1h'] = storm_dates['total_steps_1h'].astype(int)
+        max_time_steps = storm_dates['total_steps_1h'].max()
     else:
         print('Invalid dataset name')
         return
@@ -217,7 +223,7 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
                             storm_series = df.loc[:, '0'].values
                             storm_data_y.append(storm_series)
                         else:
-                            print(f"Storm {storm_idx} not found in {var_name} for level {level}")
+                            #print(f"Storm {storm_idx} not found in {var_name} for level {level}")
                             storm_data_y.append(np.array([]))  # Append an empty array if the storm index does not exist
                 except KeyError:
                     storm_data_y.append(np.array([]))  # Append an empty array if the variable is not found
@@ -229,7 +235,7 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
                             storm_series = df.loc[:, '0'].values
                             storm_data.append(storm_series)
                         else:
-                            print(f"Storm {storm_idx} not found in {var_name} for level {level}")
+                            #print(f"Storm {storm_idx} not found in {var_name} for level {level}")
                             storm_data.append(np.array([]))  # Append an empty array if the storm index does not exist
                 except KeyError:
                     storm_data.append(np.array([]))  # Append an empty array if the variable is not found
@@ -239,7 +245,7 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
 
         # Pad the data to have the same length of time steps
         if max_time_steps == -1:
-            print("Storm didn't land on EU soil, so it will be skipped.")
+            print(f"Storm didn't land on EU soil, so it will be skipped.")
         else:
             storm_data_padded = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data]
             storm_data_padded_y = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data_y]
@@ -260,20 +266,26 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
     print("Shape of the X 3D ndarray:", X_all_3d.shape)
     print("Shape of the y 3D ndarray:", y_all_3d.shape)
 
-    # check if storms in tracks_1h_EU are continuous with the column timestep
-    index_storm_EU = []
-    for i in range(0, 96):
-        locals()[f'storm_{i+1}'] = pd.read_csv(f'{path_tracks_1h_EU}/storm_{i+1}.csv')
-        try:
-            if locals()[f'storm_{i+1}']['step'].values.max() -locals()[f'storm_{i+1}']['step'].values.min() == len(locals()[f'storm_{i+1}'])-1:
-                print(f'Storm {i} is continuous.')
-                index_storm_EU.append(i)
-            else:
-                print(f'Storm {i} is not continuous.')
-                if continuous_storms == False:
-                    index_storm_EU.append(i)
-        except ValueError:
-            print(f'Storm {i} is empty.')
+    if dataset != 'datasets_1h':
+
+        # check if storms in tracks_1h_EU are continuous with the column timestep
+        index_storm_EU = []
+        for i in range(1, 97):
+            locals()[f'storm_{i}'] = pd.read_csv(f'{path_tracks_1h_EU}/storm_{i}.csv')
+            try:
+                if locals()[f'storm_{i}']['step'].values.max() -locals()[f'storm_{i}']['step'].values.min() == len(locals()[f'storm_{i}'])-1:
+                    print(f'Storm {i} is continuous.')
+                    index_storm_EU.append(i-1)
+                else:
+                    print(f'Storm {i} is not continuous, but added.')
+                    if continuous_storms == False:
+                        index_storm_EU.append(i-1)
+            except ValueError:
+                print(f"Storm {i} is empty, and probably didn't land in the EU.")
+
+    else:
+        index_storm_EU = np.arange(0,96)
+
     # OLD WAY
     #storm_index_test_valid = [0, 3, 4, 11, 13, 14, 17, 20, 25, 27, 28, 29, 31, 35, 53, 54, 57, 64, 69, 71, 75, 81, 85, 86, 87, 90, 92, 93, 95]
     #storm_index_validation = [3, 4, 11, 17, 31, 35, 54, 86, 87, 92]
@@ -329,7 +341,10 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
 
     print("Order of the stats : 'max', 'min', 'mean', 'std'")
 
-    return X_train, X_test, X_validation, y_train, y_test, y_validation
+    if dataset == 'datasets_1h':
+        return X_train, X_test, X_validation, y_train, y_test, y_validation, X_all_3d, y_all_3d
+    else:
+        return X_train, X_test, X_validation, y_train, y_test, y_validation, y_all_3d
 
 def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_non_EU, dataset, continuous_storms=True):
     if dataset == 'datasets_1h_non_EU':
@@ -369,7 +384,7 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1
                             storm_series = df.loc[:, '0'].values
                             storm_data_y.append(storm_series)
                         else:
-                            print(f"Storm {storm_idx} not found in {var_name} for level {level}")
+                            #print(f"Storm {storm_idx} not found in {var_name} for level {level}")
                             storm_data_y.append(np.array([]))  # Append an empty array if the storm index does not exist
                 except KeyError:
                     storm_data_y.append(np.array([]))  # Append an empty array if the variable is not found
@@ -381,7 +396,7 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1
                             storm_series = df.loc[:, '0'].values
                             storm_data.append(storm_series)
                         else:
-                            print(f"Storm {storm_idx} not found in {var_name} for level {level}")
+                            #print(f"Storm {storm_idx} not found in {var_name} for level {level}")
                             storm_data.append(np.array([]))  # Append an empty array if the storm index does not exist
                 except KeyError:
                     storm_data.append(np.array([]))  # Append an empty array if the variable is not found
@@ -406,24 +421,68 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1
     # Check if storms are continuous (outside EU soil)
     index_storm_non_EU = []
     last_step_before_eu = []
-    for i in range(1, 97):
-        locals()[f'storm_{i}'] = pd.read_csv(f'{path_tracks_1h_non_EU}/storm_{i}.csv') #{path}
+
+    #OLD WAY
+    #for i in range(1, 97):
+        #locals()[f'storm_{i}'] = pd.read_csv(f'{path_tracks_1h_non_EU}/storm_{i}.csv') #{path}
+        #try:
+            #if locals()[f'storm_{i}']['step'].values.max() - locals()[f'storm_{i}']['step'].values.min() == len(locals()[f'storm_{i}']) - 1 and storm_dates.loc[storm_dates['storm_index'] == i, 'first_step_in_eu'].values[0] != -1 and locals()[f'storm_{i}']['step'].values.min() == 0:
+                #print(f'Storm {i} is continuous.')
+                #last_step_before_eu.append(locals()[f'storm_{i}']['step'].values.max())
+                #index_storm_non_EU.append(i-1)
+            #else:
+                #print(f"Storm {i} is not continuous or doesn't land in EU.")
+                ##last_step_before_eu.append(0)
+                #if continuous_storms == False and storm_dates.loc[storm_dates['storm_index'].astype(int) == i, 'first_step_in_eu'].values[0] != -1 and locals()[f'storm_{i}']['step'].values.min() == 0:
+                    #index_storm_non_EU.append(i)
+                    #last_step_before_eu.append(storm_dates.loc[storm_dates['storm_index'] == i, 'nb_steps_1h_before_landfall'].values[0]) 
+                #else:
+                    #last_step_before_eu.append(0)
+        #except ValueError:
+            #print(f'Storm {i} is empty or started in the EU.')
+            #last_step_before_eu.append(0)
+
+    # NEW WAY
+    index_storm_non_EU = []
+    last_step_before_eu = []
+
+    for i in range(1, 97):  # Assuming storm files are 1-indexed
+        storm_file = f'{path_tracks_1h_non_EU}/storm_{i}.csv'
         try:
-            if locals()[f'storm_{i}']['step'].values.max() - locals()[f'storm_{i}']['step'].values.min() == len(locals()[f'storm_{i}']) - 1 and storm_dates.loc[storm_dates['storm_index'] == i, 'first_step_in_eu'].values[0] != -1 and locals()[f'storm_{i}']['step'].values.min() == 0:
+            # Read the storm file
+            storm_data = pd.read_csv(storm_file)
+            
+            # Check if the storm is continuous
+            if (
+                storm_data['step'].values.max() - storm_data['step'].values.min() == len(storm_data) - 1
+                and storm_dates.loc[storm_dates['storm_index'] == i, 'first_step_in_eu'].values[0] != -1
+                and storm_data['step'].values.min() == 0
+            ):
                 print(f'Storm {i} is continuous.')
-                index_storm_non_EU.append(i-1)
-                last_step_before_eu.append(locals()[f'storm_{i}']['step'].values.max())
+                index_storm_non_EU.append(i-1)  # Use consistent `i` indexing
+                last_step_before_eu.append(storm_data['step'].values.max())
+            
+            # Handle fallback condition
+            elif (
+                not continuous_storms
+                and storm_dates.loc[storm_dates['storm_index'].astype(int) == i, 'first_step_in_eu'].values[0] != -1
+                and storm_data['step'].values.min() == 0
+            ):
+                print(f'Storm {i} is not continuous, but added.')
+                index_storm_non_EU.append(i-1)  # Use consistent `i` indexing
+                last_step_before_eu.append(
+                    storm_dates.loc[storm_dates['storm_index'] == i, 'nb_steps_1h_before_landfall'].values[0]
+                )
             else:
                 print(f"Storm {i} is not continuous or doesn't land in EU.")
-                #last_step_before_eu.append(0)
-                if continuous_storms == False and storm_dates.loc[storm_dates['storm_index'].astype(int) == i, 'first_step_in_eu'].values[0] != -1 and locals()[f'storm_{i}']['step'].values.min() == 0:
-                    index_storm_non_EU.append(i)
-                    last_step_before_eu.append(storm_dates.loc[storm_dates['storm_index'] == i, 'nb_steps_1h_before_landfall'].values[0]) 
-                else:
-                    last_step_before_eu.append(0)
-        except ValueError:
-            print(f'Storm {i} is empty or started in the EU.')
+                last_step_before_eu.append(0)
+        
+        except (ValueError, FileNotFoundError) as e:
+            print(f"Storm {i} is empty or caused an error: {e}")
             last_step_before_eu.append(0)
+
+    # Remove duplicates from index_storm_non_EU if necessary
+    index_storm_non_EU = list(set(index_storm_non_EU))
 
     # Indices for the test, validation, and training sets
     # OLD WAY
