@@ -180,7 +180,7 @@ def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, le
                     #else:
                         #print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files"
 
-def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU, dataset, continuous_storms=True):
+def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU, dataset, continuous_storms=True, all_data=False):
     if dataset == 'datasets_1h_EU':
         storm_dates['total_steps_1h'] = storm_dates['total_steps_1h'].astype(int)
         storm_dates['nb_steps_1h_before_landfall'] = storm_dates['nb_steps_1h_before_landfall'].astype(int)
@@ -341,12 +341,12 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
 
     print("Order of the stats : 'max', 'min', 'mean', 'std'")
 
-    if dataset == 'datasets_1h':
+    if dataset == 'datasets_1h' or all_data == True:
         return X_train, X_test, X_validation, y_train, y_test, y_validation, X_all_3d, y_all_3d
     else:
         return X_train, X_test, X_validation, y_train, y_test, y_validation, y_all_3d
 
-def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_non_EU, dataset, continuous_storms=True):
+def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_non_EU, dataset, continuous_storms=True, all_data=False):
     if dataset == 'datasets_1h_non_EU':
         storm_dates['nb_steps_1h_before_landfall'] = storm_dates['nb_steps_1h_before_landfall'].astype(int)
         max_time_steps = storm_dates['nb_steps_1h_before_landfall'].max()+1
@@ -527,7 +527,10 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1
 
     print("Order of the stats : 'max', 'min', 'mean', 'std'")
 
-    return X_train, X_test, X_validation, y_train, y_test, y_validation, y_all_3d, last_step_before_eu
+    if all_data == True:
+        return X_train, X_test, X_validation, y_train, y_test, y_validation, X_all_3d, y_all_3d, last_step_before_eu
+    else:
+        return X_train, X_test, X_validation, y_train, y_test, y_validation, y_all_3d, last_step_before_eu
 
 def square_EU(EU_border, tracks, choosen_directory, path):
 

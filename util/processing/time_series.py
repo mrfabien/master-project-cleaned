@@ -80,3 +80,101 @@ def preprocess_y_data(y, dataset_type):
     
     return y_processed, mask_y
 
+def process_storm_data(y_all_3d, y_all_3d_non_eu, number_of_steps_eu, number_of_steps_non_eu, print_info=False):
+    """
+    Process storm data for both EU and non-EU datasets.
+
+    Parameters:
+    - y_all_3d (ndarray): 3D array for EU data.
+    - y_all_3d_non_eu (ndarray): 3D array for non-EU data.
+    - number_of_steps_eu (int): The number of steps to retain in the processed DataFrame for EU data.
+    - number_of_steps_non_eu (int): The number of steps to retain in the processed DataFrame for non-EU data.
+    - print (bool): Whether to print information about the storms being removed or not.
+
+    Returns:
+    - eu_results[0 to 3]: Processed DataFrames for EU [0 = y_max, 1 = y_min, 2 = y_mean, 3 = y_std].
+    - non_eu_results[0 to 3]: Processed DataFrames for non-EU [0 = y_max, 1 = y_min, 2 = y_mean, 3 = y_std].
+    """
+    
+    def reverse_non_nan(row):
+        non_nan_values = row.dropna().values[::-1]
+        num_padding = len(row) - len(non_nan_values)
+        reversed_padded = np.concatenate([non_nan_values, [np.nan] * num_padding])
+        return pd.Series(reversed_padded, index=row.index)
+    
+    def add_column_first(df, column_name, column_values):
+        df[column_name] = column_values
+        cols = [column_name] + [col for col in df.columns if col != column_name]
+        return df[cols]
+    
+    def process_single_dataset(y_data, number_of_steps, reverse):
+        y_max = pd.DataFrame(y_data[:, :, 0])
+        y_min = pd.DataFrame(y_data[:, :, 1])
+        y_mean = pd.DataFrame(y_data[:, :, 2])
+        y_std = pd.DataFrame(y_data[:, :, 3])
+
+        # Reverse non-NaN values in each row for non-EU data
+
+        if reverse==True:
+            y_max = y_max.apply(reverse_non_nan, axis=1)
+            y_min = y_min.apply(reverse_non_nan, axis=1)
+            y_mean = y_mean.apply(reverse_non_nan, axis=1)
+            y_std = y_std.apply(reverse_non_nan, axis=1)
+        
+        # Add a 'storm_index' column as the first column
+        #for df in [y_max, y_min, y_mean, y_std]:
+            #df['storm_index'] = df.index + 1
+            #df = add_column_first(df, 'storm_index', df.index + 1)
+        
+        # Add a column with the storm index
+        y_max['storm_index'] = y_max.index+1
+        y_min['storm_index'] = y_min.index+1
+        y_mean['storm_index'] = y_mean.index+1
+        y_std['storm_index'] = y_std.index+1
+
+        # Call the function to add a 'storm_index' column
+        y_max = add_column_first(y_max, 'storm_index', y_max.index + 1)
+        y_min = add_column_first(y_min, 'storm_index', y_min.index + 1)
+        y_mean = add_column_first(y_mean, 'storm_index', y_mean.index + 1)
+        y_std = add_column_first(y_std, 'storm_index', y_std.index + 1)
+        
+        # Retain only the specified number of steps (plus storm_index)
+        y_max = y_max.iloc[:, 0:number_of_steps + 1]
+        y_min = y_min.iloc[:, 0:number_of_steps + 1]
+        y_mean = y_mean.iloc[:, 0:number_of_steps + 1]
+        y_std = y_std.iloc[:, 0:number_of_steps + 1]
+        
+        # Remove rows with NaN values
+        y_max = y_max.dropna()
+        y_min = y_min.dropna()
+        y_mean = y_mean.dropna()
+        y_std = y_std.dropna()
+        
+        return y_max, y_min, y_mean, y_std
+    
+    # Process both datasets
+    eu_results = process_single_dataset(y_all_3d, number_of_steps_eu, reverse=False)
+    non_eu_results = process_single_dataset(y_all_3d_non_eu, number_of_steps_non_eu, reverse=True)
+
+    if print_info == True:
+
+        # Compare the storms in both datasets
+        print(f'EU dataset had {eu_results[0].shape[0]} storms.')
+        print(f'Non-EU dataset had {non_eu_results[0].shape[0]} storms.')
+
+        # Remove the storms that are not in both datasets
+        eu_storms = eu_results[0]['storm_index'].values
+        non_eu_storms = non_eu_results[0]['storm_index'].values
+        common_storms = np.intersect1d(eu_storms, non_eu_storms)
+        eu_results = [df[df['storm_index'].isin(common_storms)] for df in eu_results]
+        non_eu_results = [df[df['storm_index'].isin(common_storms)] for df in non_eu_results]
+
+        # Print the storms that were removed
+        removed_storms = np.setdiff1d(eu_storms, common_storms)
+        print(f'{len(removed_storms)} storms were removed from the EU dataset.')
+        removed_storms = np.setdiff1d(non_eu_storms, common_storms)
+        print(f'{len(removed_storms)} storms were removed from the non-EU dataset.')
+
+        print(f'EU dataset is 1st step in EU first, and non-EU dataset landfall step is 1st (meaning the step {number_of_steps_non_eu} hours before landfall is last).')
+    
+    return eu_results[0], eu_results [1], eu_results[2], eu_results[3], non_eu_results[0], non_eu_results[1], non_eu_results[2], non_eu_results[3]
