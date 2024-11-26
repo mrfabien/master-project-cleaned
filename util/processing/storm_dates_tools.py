@@ -314,9 +314,10 @@ def extract_first_step(storm_dates, path_tracks, folder, number_of_storms):
             first_step = -1
             first_steps.append(first_step)
             print(f'Storm {i} is empty')
-
-    # uncomment this line if you want to use this function as a standalone function
-    #storm_dates = pd.read_csv(storm_dates)
+    try:
+        storm_dates = pd.read_csv(storm_dates)
+    except:
+        storm_dates = storm_dates
     storm_dates['first_step_in_eu'] = first_steps
 
     # this code isn't consistant, because it checks by order of index in the 1st part, and the second it checks by storm index
