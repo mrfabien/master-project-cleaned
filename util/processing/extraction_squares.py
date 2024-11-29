@@ -782,6 +782,12 @@ def generate_config(variables_list, config_file, start_year, end_year, variable_
                             if year not in years_to_exclude:
                                 config.write(f"{index} {variable} {year} {level}\n")
                                 index += 1
+                elif variable =='geopotential':
+                    for level in [500, 1000]:
+                        for year in range(start_year, end_year):
+                            if year not in years_to_exclude:
+                                config.write(f"{index} {variable} {year} {level}\n")
+                                index += 1
                 else:
                     for year in range(start_year, end_year):
                         if year not in years_to_exclude:
