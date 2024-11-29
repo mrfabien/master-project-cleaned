@@ -18,16 +18,20 @@ def read_column_values(csv_file, column_name):
         values = [row[column_name] for row in reader]
     return values
 
-# Function to filter rows from one CSV based on values from another CSV
+# Function to copy then filter rows from one CSV based on values from another CSV
 def filter_rows(input_csv, output_csv, column_name, filter_values):
     with open(input_csv, mode='r') as infile, open(output_csv, mode='w', newline='') as outfile:
         reader = csv.DictReader(infile)
         writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
         
-        writer.writeheader()  # Write the header to the output file
+        # Write the header to the output file
+        writer.writeheader()
+
+        # Write filtered rows
         for row in reader:
             if row[column_name] in filter_values:
-                writer.writerow(row)
+                writer.writerow(row)  # Write only matching rows
+
 
 # Function to filter rows from one CSV based on values from another CSV (non-matching rows)
 def filter_rows_exclude(input_csv, output_csv, column_name, exclude_values):
@@ -101,14 +105,16 @@ def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels
 
     # Loop through variables, storms, levels, and stats
     for variable in variables:
+        # create the directory for the variable if it doesn't exist
+        os.makedirs(os.path.join(output_base_dir, variable), exist_ok=True)
         for storm in storms:
             for level in levels:
                 for stat in stats:
                     csv_file1 = os.path.join(base_dir_csv1, variable, f"storm_{storm}", f"{stat}_{storm}_{level}.csv")
-                    if timestep == '1h':
-                        csv_file2 = os.path.join(base_dir_csv2, f"storm_{storm}.csv")
-                    else:
-                        csv_file2 = os.path.join(base_dir_csv2, f"storm_{storm}.csv")
+                    #if timestep == '1h':
+                        #csv_file2 = os.path.join(base_dir_csv2, f"storm_{storm}.csv")
+                    #else:
+                    csv_file2 = os.path.join(base_dir_csv2, f"storm_{storm}.csv")
                     output_file = os.path.join(output_base_dir, variable, f"storm_{storm}", f"{stat}_{storm}_{level}.csv")
 
                     # Create directories for the output file if they do not exist
@@ -129,6 +135,7 @@ def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels
                     else:
                         if all_details == True:
                            print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
+        print(f"Finished filtering {variable}")
 
 def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, levels, all_details=False):
     levels = levels['levels'].to_list()

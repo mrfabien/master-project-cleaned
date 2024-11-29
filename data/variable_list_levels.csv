@@ -20,6 +20,7 @@ mean_top_net_short_wave_radiation_flux
 mean_total_precipitation_rate
 mean_sea_level_pressure
 mean_surface_latent_heat_flux
+mean_surface_sensible_heat_flux 
 mean_surface_net_long_wave_radiation_flux
 mean_surface_net_short_wave_radiation_flux
 mean_vertically_integrated_moisture_divergence
@@ -45,6 +46,7 @@ relative_humidity_950
 relative_humidity_975
 relative_humidity_1000
 surface_pressure
+surface_latent_heat_flux
 specific_rain_water_content_10
 specific_rain_water_content_20
 specific_rain_water_content_30
