@@ -74,7 +74,7 @@ def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels
 
     levels = levels['levels'].to_list()
 
-    variables = read_variable_names(variables_csv)
+    variables = pd.read_csv(variables_csv)
     # List of storms and levels
     storms = [f"{i}" for i in range(1, 97)]
 
@@ -104,17 +104,19 @@ def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels
     os.makedirs(output_base_dir, exist_ok=True)
 
     # Loop through variables, storms, levels, and stats
-    for variable in variables:
-        # create the directory for the variable if it doesn't exist
+    for variable in variables['variables']:
+        # create the variable directory if it doesn't exist
         os.makedirs(os.path.join(output_base_dir, variable), exist_ok=True)
         for storm in storms:
+            # create the storm directory if it doesn't exist
+            os.makedirs(os.path.join(output_base_dir, variable, f"storm_{storm}"), exist_ok=True)
             for level in levels:
                 for stat in stats:
                     csv_file1 = os.path.join(base_dir_csv1, variable, f"storm_{storm}", f"{stat}_{storm}_{level}.csv")
                     #if timestep == '1h':
-                        #csv_file2 = os.path.join(base_dir_csv2, f"storm_{storm}.csv")
-                    #else:
                     csv_file2 = os.path.join(base_dir_csv2, f"storm_{storm}.csv")
+                    #else:
+                        #csv_file2 = os.path.join(base_dir_csv2, f"storm_{storm}.csv")
                     output_file = os.path.join(output_base_dir, variable, f"storm_{storm}", f"{stat}_{storm}_{level}.csv")
 
                     # Create directories for the output file if they do not exist
@@ -125,7 +127,7 @@ def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels
                         # Read the column values from the first CSV
                         filter_values = read_column_values(csv_file2, 'step')
 
-                        # Filter rows from the second CSV and write to the output CSV
+                        # Filter rows from the first CSV and write to the output CSV
                         filter_rows(csv_file1, output_file, '', filter_values)
 
                         if all_details == True:
@@ -196,6 +198,7 @@ def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, le
                     else:
                         if all_details == True:
                            print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
+        print(f"Finished filtering {variable}")
 
 def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU, dataset, continuous_storms=True, all_data=False):
     if dataset == 'datasets_1h_EU':
