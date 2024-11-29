@@ -66,8 +66,7 @@ def split_storm_numbers(storm_numbers, test_valid_percentage=0.3, seed=42):
 
     return storm_all, storm_test, storm_valid
 
-
-def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels, operating_sys):
+def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels, all_details=False):
 
     levels = levels['levels'].to_list()
 
@@ -78,20 +77,22 @@ def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels
     # List of statistic types
     stats = ["max", "mean", "min", "std"]
 
-    if operating_sys == 'curnagl':
-        base_dir_csv1 = f"{path}curnagl/DATASETS/datasets_{timestep}"
-        print('Taking data from', base_dir_csv1)
-        base_dir_csv2 = f"{path}cleaner_version/pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
-        print('With condition based on', base_dir_csv2)
-    else:
+    # Uncomment this if you want to use the old datasets
+    #if operating_sys == 'curnagl':
+        #base_dir_csv1 = f"{path}curnagl/DATASETS/datasets_{timestep}"
+        #print('Taking data from', base_dir_csv1)
+        #base_dir_csv2 = f"{path}cleaner_version/pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+        #print('With condition based on', base_dir_csv2)
+    #else:
         # Base directories for input CSV files
-        base_dir_csv1 = f"{path}data/datasets_{timestep}"
-        #if operating_system == 'mac':
-            #base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
-            #print(base_dir_csv2)
-        #else:
-        base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
-        print(base_dir_csv2)
+    base_dir_csv1 = f"{path}data/datasets_{timestep}"
+    print('Taking data from', base_dir_csv1)
+    #if operating_system == 'mac':
+        #base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+        #print(base_dir_csv2)
+    #else:
+    base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+    print('With condition based on', base_dir_csv2)
 
     output_base_dir = f"{path}{choosen_directory}datasets_{timestep}_EU"
 
@@ -121,11 +122,15 @@ def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels
                         # Filter rows from the second CSV and write to the output CSV
                         filter_rows(csv_file1, output_file, '', filter_values)
 
-                        print(f"Filtered rows for {variable}, {storm}, level {level}, stat {stat} have been written to {output_file}")
-                    #else:
-                        #print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
+                        if all_details == True:
+                            print(f"Filtered rows for {variable}, {storm}, level {level}, stat {stat} have been written to {output_file}")
 
-def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, levels, operating_sys):
+                        #print(f"Filtered rows for {variable}, {storm}, level {level}, stat {stat} have been written to {output_file}")
+                    else:
+                        if all_details == True:
+                           print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
+
+def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, levels, all_details=False):
     levels = levels['levels'].to_list()
 
     variables = read_variable_names(variables_csv)
@@ -135,20 +140,21 @@ def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, le
     # List of statistic types
     stats = ["max", "mean", "min", "std"]
 
-    if operating_sys == 'curnagl':
-        base_dir_csv1 = f"{path}curnagl/DATASETS/datasets_{timestep}"
-        print('Taking data from', base_dir_csv1)
-        base_dir_csv2 = f"{path}cleaner_version/pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
-        print('With condition based on', base_dir_csv2)
-    else:
+    #if operating_sys == 'curnagl':
+        #base_dir_csv1 = f"{path}curnagl/DATASETS/datasets_{timestep}"
+        #print('Taking data from', base_dir_csv1)
+        #base_dir_csv2 = f"{path}cleaner_version/pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+        #print('With condition based on', base_dir_csv2)
+    #else:
         # Base directories for input CSV files
-        base_dir_csv1 = f"{path}data/datasets_{timestep}"
+    base_dir_csv1 = f"{path}data/datasets_{timestep}"
+    print('Taking data from', base_dir_csv1)
         #if operating_system == 'mac':
-            #base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
-            #print(base_dir_csv2)
-        #else:
-        base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
-        print(base_dir_csv2)
+        #base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+        #print(base_dir_csv2)
+    #else:
+    base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+    print('With condition based on',base_dir_csv2)
 
 
     output_base_dir = f"{path}{choosen_directory}datasets_{timestep}_non_EU"
@@ -176,9 +182,13 @@ def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, le
                         # Filter rows from the first CSV, excluding those in exclude_values
                         filter_rows_exclude(csv_file1, output_file, '', exclude_values)
 
-                        print(f"Filtered non-EU rows for {variable}, {storm}, level {level}, stat {stat} have been written to {output_file}")
-                    #else:
-                        #print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files"
+                        if all_details == True:
+                            print(f"Filtered rows for {variable}, {storm}, level {level}, stat {stat} have been written to {output_file}")
+
+                        #print(f"Filtered rows for {variable}, {storm}, level {level}, stat {stat} have been written to {output_file}")
+                    else:
+                        if all_details == True:
+                           print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
 
 def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU, dataset, continuous_storms=True, all_data=False):
     if dataset == 'datasets_1h_EU':
@@ -741,6 +751,32 @@ def hourly_steps (factor,choosen_directory, path):
 
     for i in range(1,97):
         locals()['tracks_'+str(i)+'_interp'].to_csv(f'{path}{choosen_directory}/tracks_1h/storm_{i}.csv',index=False)
+
+# Function to generate the config file
+def generate_config(variables_list, config_file, start_year, end_year, variable_to_exclude, years_to_exclude, full_pressure):
+    end_year = end_year + 1  # Include the end year in the range
+    with open(variables_list, 'r') as variables_list:
+        reader = csv.reader(variables_list)
+        variables = [row[0].strip() for row in reader]  # Strip whitespace from variable names
+
+    with open(config_file, 'w') as config:
+        config.write("ArrayTaskID Nom_dossier Année Level\n")  # Header line
+        index = 1
+        for variable in variables:
+            if variable == 'variables':
+                continue
+            elif variable not in variable_to_exclude:
+                if variable == 'relative_humidity' or variable == 'vertical_velocity' or variable == 'specific_rain_water_content':
+                    for level in full_pressure:
+                        for year in range(start_year, end_year):#years_to_include:#range(1990, 2022):
+                            if year not in years_to_exclude:
+                                config.write(f"{index} {variable} {year} {level}\n")
+                                index += 1
+                else:
+                    for year in range(start_year, end_year):
+                        if year not in years_to_exclude:
+                            config.write(f"{index} {variable} {year} 0\n")
+                            index += 1
 
 
 
