@@ -2,3 +2,5 @@ data/raw_data/*
 pre_processing/maps/QGIS/layers/*
 pre_processing/maps/QGIS/temp_layer/*
 pre_processing/maps/QGIS/temp_temp/*
+DS_store
+test/*

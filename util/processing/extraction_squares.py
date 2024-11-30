@@ -29,7 +29,7 @@ def filter_rows(input_csv, output_csv, column_name, filter_values):
 
         # Write filtered rows
         for row in reader:
-            if row[column_name] in filter_values:
+            if int(row[column_name]) in filter_values:
                 writer.writerow(row)  # Write only matching rows
 
 
@@ -794,10 +794,86 @@ def generate_config(variables_list, config_file, start_year, end_year, variable_
                             config.write(f"{index} {variable} {year} 0\n")
                             index += 1
 
+def get_continuous_steps(values):
+    continuous_steps = []
+    
+    # Sort the values
+    values.sort()
 
+    if len(values) == 0:
+        return continuous_steps
+    continuous_steps.append(values[0])  # Always include the first value
+    for i in range(1, len(values)):
+        if values[i] - values[i - 1] > 1:  # Stop at the first gap
+            break
+        continuous_steps.append(values[i])
+    return continuous_steps
 
+def filtering_storms(
+    variables_csv,
+    timestep,
+    working_directory,
+    choosen_directory,
+    levels,
+    filter_type,
+    continuous_EU=True,
+    continuous_non_EU=True,
+    all_details=False
+):
+    levels = levels['levels'].to_list()
+    variables = pd.read_csv(variables_csv)['variables']
+    storms = [f"{i}" for i in range(1, 97)]
+    stats = ["max", "mean", "min", "std"]
 
+    base_dir_csv1 = f"{working_directory}data/datasets_{timestep}"
+    if filter_type == 'EU':
+        base_dir_csv2 = f"{working_directory}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+    elif filter_type == 'non_EU':
+        base_dir_csv2 = f"{working_directory}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_non_EU"
 
+    output_base_dir = f"{working_directory}{choosen_directory}datasets_{timestep}_{filter_type}"
+    os.makedirs(output_base_dir, exist_ok=True)
+
+    print(f"Taking data from {base_dir_csv1}")
+    print(f"With condition based on {base_dir_csv2}")
+
+    for variable in variables:
+        os.makedirs(os.path.join(output_base_dir, variable), exist_ok=True)
+        for storm in storms:
+            os.makedirs(os.path.join(output_base_dir, variable, f"storm_{storm}"), exist_ok=True)
+            for level in levels:
+                for stat in stats:
+                    csv_file1 = os.path.join(base_dir_csv1, variable, f"storm_{storm}", f"{stat}_{storm}_{level}.csv")
+                    csv_file2 = os.path.join(base_dir_csv2, f"storm_{storm}.csv")
+                    output_file = os.path.join(output_base_dir, variable, f"storm_{storm}", f"{stat}_{storm}_{level}.csv")
+
+                    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+                    if os.path.exists(csv_file1) and os.path.exists(csv_file2):
+                        filter_values = read_column_values(csv_file2, 'step')
+                        filter_values = [int(value) for value in filter_values]  # Convert to integers
+
+                        if filter_type == 'EU' and continuous_EU==True:
+                            filter_values = get_continuous_steps(filter_values)
+                        elif filter_type == 'non_EU' and continuous_non_EU==True:
+                            filter_values = get_continuous_steps(filter_values)
+
+                        if not filter_values:
+                            if all_details:
+                                print(f"No rows to filter for {variable}, {storm}, level {level}, stat {stat}")
+                            continue
+
+                        if filter_type == 'EU':
+                            filter_rows(csv_file1, output_file, '', filter_values)
+                        elif filter_type == 'non_EU':
+                            filter_rows(csv_file1, output_file, '', filter_values)
+
+                        if all_details==True:
+                            print(f"Filtered rows for {variable}, {storm}, level {level}, stat {stat} written to {output_file}")
+                    else:
+                        if all_details==True:
+                            print(f"Missing input files for {variable}, {storm}, level {level}, stat {stat}")
+        print(f"Finished filtering {variable}")
 
 
 
