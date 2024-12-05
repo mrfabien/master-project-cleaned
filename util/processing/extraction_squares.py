@@ -44,7 +44,7 @@ def filter_rows_exclude(input_csv, output_csv, column_name, exclude_values):
             if row[column_name] not in exclude_values:  # Only include rows NOT in exclude_values
                 writer.writerow(row)
 
-def split_storm_numbers(storm_numbers, test_valid_percentage=0.3, seed=42):
+def OLD_split_storm_numbers(storm_numbers, test_valid_percentage=0.3, seed=42):
     # Ensure reproducibility
     random.seed(seed)
 
@@ -69,6 +69,39 @@ def split_storm_numbers(storm_numbers, test_valid_percentage=0.3, seed=42):
     storm_all = storm_numbers[test_count + valid_count:]
 
     return storm_all, storm_test, storm_valid
+
+def split_storm_numbers(storm_numbers, test_valid_percentage, seed_number):
+    # Ensure reproducibility
+    random.seed(seed_number)
+
+    test_index_fixed = [6,29,38,45,48,66,86,87,93]
+    # remove 1 to have the index of the storms
+    test_index_fixed = [x-1 for x in test_index_fixed]
+
+    filtered_numbers = [x for x in storm_numbers if x not in test_index_fixed]
+
+    # Shuffle the list for randomness
+    random.shuffle(filtered_numbers)
+
+    # Calculate the number of storms for test and valid sets
+    total_storms = len(filtered_numbers)
+    test_valid_count = int(total_storms * test_valid_percentage)
+    
+    # Split test_valid_count between test and valid sets
+    #test_count = test_valid_count // 2
+    #valid_count = test_valid_count - test_count  # Ensure the total count matches test_valid_count
+
+    # Select for storm_test
+    #storm_test = storm_numbers[:test_count]
+
+    # Select for storm_valid
+    storm_valid = filtered_numbers[:test_valid_count]
+
+    # The remaining go into storm_all (training set)
+    storm_all = filtered_numbers[test_valid_count:]
+
+    return storm_all, test_index_fixed, storm_valid
+
 
 def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels, all_details=False):
 
@@ -200,7 +233,7 @@ def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, le
                            print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
         print(f"Finished filtering {variable}")
 
-def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU, dataset, continuous_storms=True, all_data=False):
+def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU, dataset, seed_number, continuous_storms=True, all_data=False):
     if dataset == 'datasets_1h_EU':
         storm_dates['total_steps_1h'] = storm_dates['total_steps_1h'].astype(int)
         storm_dates['nb_steps_1h_before_landfall'] = storm_dates['nb_steps_1h_before_landfall'].astype(int)
@@ -336,7 +369,7 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
 
     # NEW WAY
 
-    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_EU)
+    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_EU, 0.15, seed_number)
 
     # order the index of the storms
 
@@ -366,7 +399,7 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
     else:
         return X_train, X_test, X_validation, y_train, y_test, y_validation, y_all_3d
 
-def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_non_EU, dataset, continuous_storms=True, all_data=False):
+def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_non_EU, dataset, seed_number, continuous_storms=True, all_data=False):
     if dataset == 'datasets_1h_non_EU':
         storm_dates['nb_steps_1h_before_landfall'] = storm_dates['nb_steps_1h_before_landfall'].astype(int)
         max_time_steps = storm_dates['nb_steps_1h_before_landfall'].max()+1
@@ -524,7 +557,7 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1
 
     # NEW WAY
 
-    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_non_EU)
+    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_non_EU, 0.15, seed_number)
 
     # order the index of the storms
 
@@ -859,6 +892,10 @@ def filtering_storms(
                             filter_values = get_continuous_steps(filter_values)
 
                         if not filter_values:
+                            pd.DataFrame().to_csv(output_file, index=False)
+                            with open(output_file, 'w') as f:
+                                f.write(",0\n")
+
                             if all_details:
                                 print(f"No rows to filter for {variable}, {storm}, level {level}, stat {stat}")
                             continue

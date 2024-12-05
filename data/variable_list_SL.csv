@@ -27,6 +27,7 @@ relative_humidity
 sea_surface_temperature
 surface_pressure
 surface_latent_heat_flux
+surface_sensible_heat_flux
 specific_rain_water_content
 total_precipitation
 total_totals_index
