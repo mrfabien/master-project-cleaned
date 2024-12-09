@@ -5,3 +5,4 @@ DS_store
 test/*
 data/i10fg_dataset/*
 .vscode/*
+data/test/*
