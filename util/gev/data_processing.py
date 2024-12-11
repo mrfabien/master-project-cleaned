@@ -94,3 +94,19 @@ def process_hourly_climatology(dataset_path, cluster_data, name, lat_min=35, lat
     hourly_all_df_with['name'] = name
 
     return hourly_all_df_with
+
+def process_file(path, month, day, cluster_data):
+    """
+    Process a single file based on the path, month, and day.
+    Returns the processed dataset or None if an error occurs.
+    """
+    try:
+        if path == 'hourly_with_storms' or path == 'hourly_without_storms':
+            file_path_hourly = f'data/climatology/{path}/climatology_europe_{month}_{day}.nc'
+            return process_hourly_climatology(file_path_hourly, cluster_data, name=f'{path}_{month}_{day}')
+        elif path == 'daily_with_storms' or path == 'daily_without_storms':
+            file_path_daily = f'data/climatology/{path}/climatology_europe_{month}_{day}.tif'
+            return process_daily_climatology(file_path_daily, cluster_data, name=f'{path}_{month}_{day}')
+    except Exception as e:
+        print(f"Error processing {path} for {month}_{day}: {e}")
+        return None

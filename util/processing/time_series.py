@@ -229,4 +229,4 @@ def tif_to_dataframe(tif_file, date_climatology=None, band=1):
 
     except Exception as e:
         print(f"An error occurred: {e}")
-        return None
+        #return None
