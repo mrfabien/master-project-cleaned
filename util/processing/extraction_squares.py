@@ -172,7 +172,7 @@ def filtering_EU_storms(variables_csv, timestep, path, choosen_directory, levels
                            print(f"Skipped {variable}, {storm}, level {level}, stat {stat} due to missing files")
         print(f"Finished filtering {variable}")
 
-def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, levels, all_details=False):
+def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, levels, all_details=False, continuous_storms=True):
     levels = levels['levels'].to_list()
 
     variables = read_variable_names(variables_csv)
@@ -195,7 +195,10 @@ def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, le
         #base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
         #print(base_dir_csv2)
     #else:
-    base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
+    if continuous_storms == True:
+        base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_before_EU"
+    else:
+        base_dir_csv2 = f"{path}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
     print('With condition based on',base_dir_csv2)
 
 
@@ -219,10 +222,16 @@ def filtering_non_EU_storms(variables_csv, timestep, path, choosen_directory, le
                     # Only read and filter if the CSV files exist
                     if os.path.exists(csv_file1) and os.path.exists(csv_file2):
                         # Read the column values from the EU-specific CSV to use as exclusion values
-                        exclude_values = read_column_values(csv_file2, 'step')
+                        if continuous_storms == True:
+                            inlude_values = read_column_values(csv_file2, 'step')
+                        else:
+                            exclude_values = read_column_values(csv_file2, 'step')
 
                         # Filter rows from the first CSV, excluding those in exclude_values
-                        filter_rows_exclude(csv_file1, output_file, '', exclude_values)
+                        if continuous_storms == True:
+                            filter_rows(csv_file1, output_file, '', inlude_values)
+                        else:
+                            filter_rows_exclude(csv_file1, output_file, '', exclude_values)
 
                         if all_details == True:
                             print(f"Filtered rows for {variable}, {storm}, level {level}, stat {stat} have been written to {output_file}")
@@ -506,27 +515,28 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1
             storm_data = pd.read_csv(storm_file)
             
             # Check if the storm is continuous
-            if (
-                storm_data['step'].values.max() - storm_data['step'].values.min() == len(storm_data) - 1
-                and storm_dates.loc[storm_dates['storm_index'] == i, 'first_step_in_eu'].values[0] != -1
-                and storm_data['step'].values.min() == 0
-            ):
-                print(f'Storm {i} is continuous.')
-                index_storm_non_EU.append(i-1)  # Use consistent `i` indexing
-                last_step_before_eu.append(storm_data['step'].values.max())
-            
-            # Handle fallback condition
-            elif (
-                not continuous_storms
-                and storm_dates.loc[storm_dates['storm_index'].astype(int) == i, 'first_step_in_eu'].values[0] != -1
-                and storm_data['step'].values.min() == 0
-            ):
-                print(f'Storm {i} is not continuous, but added.')
-                index_storm_non_EU.append(i-1)  # Use consistent `i` indexing
-                last_step_before_eu.append(
-                    storm_dates.loc[storm_dates['storm_index'] == i, 'nb_steps_1h_before_landfall'].values[0]
-                )
-            else:
+            try: 
+                if (
+                    storm_data['step'].values.max() - storm_data['step'].values.min() == len(storm_data) - 1
+                    and storm_dates.loc[storm_dates['storm_index'] == i, 'first_step_in_eu'].values[0] != -1
+                    and storm_data['step'].values.min() == 0
+                ):
+                    print(f'Storm {i} is continuous.')
+                    index_storm_non_EU.append(i-1)  # Use consistent `i` indexing
+                    last_step_before_eu.append(storm_data['step'].values.max())
+                
+                # Handle fallback condition
+                elif (
+                    not continuous_storms
+                    and storm_dates.loc[storm_dates['storm_index'].astype(int) == i, 'first_step_in_eu'].values[0] != -1
+                    and storm_data['step'].values.min() == 0
+                ):
+                    print(f'Storm {i} is not continuous, but added.')
+                    index_storm_non_EU.append(i-1)  # Use consistent `i` indexing
+                    last_step_before_eu.append(
+                        storm_dates.loc[storm_dates['storm_index'] == i, 'nb_steps_1h_before_landfall'].values[0]
+                    )
+            except KeyError:
                 print(f"Storm {i} is not continuous or doesn't land in EU.")
                 last_step_before_eu.append(0)
         
@@ -861,8 +871,10 @@ def filtering_storms(
     base_dir_csv1 = f"{working_directory}data/datasets_{timestep}"
     if filter_type == 'EU':
         base_dir_csv2 = f"{working_directory}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_EU"
-    elif filter_type == 'non_EU':
+    elif filter_type == 'non_EU':#and continuous_non_EU==False:
         base_dir_csv2 = f"{working_directory}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_non_EU"
+    #elif filter_type == 'non_EU' and continuous_non_EU==True:
+        #base_dir_csv2 = f"{working_directory}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_before_EU"
 
     output_base_dir = f"{working_directory}{choosen_directory}datasets_{timestep}_{filter_type}"
     os.makedirs(output_base_dir, exist_ok=True)
@@ -884,13 +896,15 @@ def filtering_storms(
 
                     if os.path.exists(csv_file1) and os.path.exists(csv_file2):
                         filter_values = read_column_values(csv_file2, 'step')
-                        filter_values = [int(value) for value in filter_values]  # Convert to integers
+                        try:
+                            filter_values = [int(value) for value in filter_values]  # Convert to integers
+                        except ValueError:
+                            filter_values = [value for value in filter_values]
 
                         if filter_type == 'EU' and continuous_EU==True:
                             filter_values = get_continuous_steps(filter_values)
-                        elif filter_type == 'non_EU' and continuous_non_EU==True:
+                        elif filter_type == 'non_EU' and continuous_non_EU==True:# and base_dir_csv2!= f"{working_directory}pre_processing/tracks/ALL_TRACKS/tracks_{timestep}_before_EU":
                             filter_values = get_continuous_steps(filter_values)
-
                         if not filter_values:
                             pd.DataFrame().to_csv(output_file, index=False)
                             with open(output_file, 'w') as f:
