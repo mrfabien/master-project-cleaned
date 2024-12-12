@@ -180,7 +180,7 @@ def process_storm_data(y_all_3d, y_all_3d_non_eu, number_of_steps_eu, number_of_
     
     return eu_results[0], eu_results [1], eu_results[2], eu_results[3], non_eu_results[0], non_eu_results[1], non_eu_results[2], non_eu_results[3]
 
-def tif_to_dataframe(tif_file, date_climatology=None, band=1):
+def tif_to_dataframe(tif_file, info_print = False,  date_climatology=None, band=1):
     """
     Converts a .tif file into a Pandas DataFrame with wind speed values, longitude, and latitude.
 
@@ -226,7 +226,9 @@ def tif_to_dataframe(tif_file, date_climatology=None, band=1):
         df = pd.DataFrame(data_list)
         
         return df
-
     except Exception as e:
-        print(f"An error occurred: {e}")
+        if info_print:
+            print(f"An error occurred: {e}")
+        else:
+            print(f"An error occurred while processing the tif file.")
         #return None

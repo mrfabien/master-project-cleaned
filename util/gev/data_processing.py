@@ -20,7 +20,13 @@ def process_daily_climatology(file_path, cluster_data, name, lat_min=35, lat_max
     """
     # Load climatology data
     climatology_df = time_series.tif_to_dataframe(file_path)#, '02_02')
-    climatology_df = climatology_df.dropna()
+    try:
+        climatology_df = climatology_df.dropna()
+    except Exception as e:
+        #print(f"Error loading {file_path}: {e}")
+        print ('Taking the file_path as a dataframe')
+        climatology_df = file_path
+        climatology_df.dropna()
 
     # Filter by latitude and longitude boundaries
     climatology_df = climatology_df[
@@ -38,7 +44,7 @@ def process_daily_climatology(file_path, cluster_data, name, lat_min=35, lat_max
             climatology_df.loc[idx, 'cluster_n'] = cluster_value.values[0]
 
     # Assign name
-    climatology_df['name'] = name
+    climatology_df.loc[:, 'name'] = name
 
     return climatology_df
 
