@@ -52,15 +52,15 @@ def data_preparation_ML(X_train, y_train, name_of_variable, levels):
 
     # drop columns with 10m_u_component_of_wind and 10m_v_component_of_wind variables + specific_rain_water_content from level 10 to 300 (no values)
 
-    X_all_2d_non_na = X_all_2d_non_na.drop(columns=['10m_u_component_of_wind_max', 
-                                                    '10m_u_component_of_wind_min', 
-                                                    '10m_u_component_of_wind_mean', 
-                                                    '10m_u_component_of_wind_std', 
-                                                    '10m_v_component_of_wind_max', 
-                                                    '10m_v_component_of_wind_min', 
-                                                    '10m_v_component_of_wind_mean', 
-                                                    '10m_v_component_of_wind_std',
-    ])
+#    X_all_2d_non_na = X_all_2d_non_na.drop(columns=['10m_u_component_of_wind_max', 
+#                                                    '10m_u_component_of_wind_min', 
+#                                                    '10m_u_component_of_wind_mean', 
+#                                                    '10m_u_component_of_wind_std', 
+#                                                    '10m_v_component_of_wind_max', 
+#                                                    '10m_v_component_of_wind_min', 
+#                                                    '10m_v_component_of_wind_mean', 
+#                                                    '10m_v_component_of_wind_std',
+#    ])
     X_all_2d_non_na = X_all_2d_non_na.drop(columns=[f'specific_rain_water_content_{level}_max' for level in levels_below_300['levels']])
     X_all_2d_non_na = X_all_2d_non_na.drop(columns=[f'specific_rain_water_content_{level}_mean' for level in levels_below_300['levels']])
     X_all_2d_non_na = X_all_2d_non_na.drop(columns=[f'specific_rain_water_content_{level}_min' for level in levels_below_300['levels']])
