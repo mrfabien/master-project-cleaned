@@ -6,6 +6,10 @@ def data_preparation_ML(X_train, y_train, name_of_variable, levels):
     '''
     # reshape the X_training into a 2D array
 
+    if y_train == None:
+        print('y is None and is not used in the function')
+        y_train = X_train[:, :, :4] 
+
     X_all_2d = X_train.reshape(X_train.shape[0]*X_train.shape[1],X_train.shape[2])
     # same for y_all_3d
     y_all_2d = y_train.reshape(y_train.shape[0]*y_train.shape[1],y_train.shape[2])
