@@ -1,13 +1,13 @@
 import pandas as pd
 
-def data_preparation_ML(X_train, y_train, name_of_variable, levels):
+def data_preparation_ML(X_train, y_train, name_of_variable, levels, y_none=False, standardisation=False):
     '''
     This function prepares the data for the ML model. It reshapes the data, drops the rows with nan values, renames the columns by the name of the variables by adding also the stat of the variable (max, min, mean, std), drops the instantaneous variables, u and v wind components, and uses RandomForests to find the most important features.
     '''
     # reshape the X_training into a 2D array
 
-    if y_train == None:
-        print('y is None and is not used in the function')
+    if y_none == True:
+        print('y is is not used in the function')
         y_train = X_train[:, :, :4] 
 
     X_all_2d = X_train.reshape(X_train.shape[0]*X_train.shape[1],X_train.shape[2])
@@ -52,7 +52,7 @@ def data_preparation_ML(X_train, y_train, name_of_variable, levels):
         
     # Reset the index to ensure alignment
     levels.reset_index(drop=True, inplace=True)
-    levels_below_300 = levels[levels['levels'] <= 300]
+    levels_below_300 = levels[levels['levels'] <= 1000]
 
     # drop columns with 10m_u_component_of_wind and 10m_v_component_of_wind variables + specific_rain_water_content from level 10 to 300 (no values)
 
@@ -77,10 +77,15 @@ def data_preparation_ML(X_train, y_train, name_of_variable, levels):
             for level in levels_below_300['levels']
         )
     ]
+
+    if standardisation == False:
+        return X_all_2d_non_na, y_max, y_mean, var_stat_all_x
+
+    else:
     # using RandomForests to find the most important features
 
-    X_standardized = (X_all_2d_non_na - X_all_2d_non_na.mean()) / X_all_2d_non_na.std()
-    y_standardized_max = (y_max - y_max.mean()) / y_max.std()
-    y_standardized_mean = (y_mean - y_mean.mean()) / y_mean.std()
+        X_standardized = (X_all_2d_non_na - X_all_2d_non_na.mean()) / X_all_2d_non_na.std()
+        y_standardized_max = (y_max - y_max.mean()) / y_max.std()
+        y_standardized_mean = (y_mean - y_mean.mean()) / y_mean.std()
 
     return X_standardized, y_standardized_max, y_standardized_mean, var_stat_all_x
