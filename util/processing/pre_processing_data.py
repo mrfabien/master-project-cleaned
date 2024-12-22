@@ -1,6 +1,6 @@
 import pandas as pd
 
-def data_preparation_ML(X_train, y_train, name_of_variable, levels, y_none=False, standardisation=False):
+def data_preparation_ML(X_train, y_train, name_of_variable, levels, different_shape=False,y_none=False, standardisation=False):
     '''
     This function prepares the data for the ML model. It reshapes the data, drops the rows with nan values, renames the columns by the name of the variables by adding also the stat of the variable (max, min, mean, std), drops the instantaneous variables, u and v wind components, and uses RandomForests to find the most important features.
     '''
@@ -10,10 +10,11 @@ def data_preparation_ML(X_train, y_train, name_of_variable, levels, y_none=False
         print('y is is not used in the function')
         y_train = X_train[:, :, :4] 
 
+
     X_all_2d = X_train.reshape(X_train.shape[0]*X_train.shape[1],X_train.shape[2])
     # same for y_all_3d
     y_all_2d = y_train.reshape(y_train.shape[0]*y_train.shape[1],y_train.shape[2])
-
+    
     # drop all the rows with nan values
 
     X_all_2d = pd.DataFrame(X_all_2d)
@@ -78,7 +79,18 @@ def data_preparation_ML(X_train, y_train, name_of_variable, levels, y_none=False
         )
     ]
 
+    # reshape as (nb_storms, nb_timesteps * nb_features)
+    X_all_2d_non_na_reshape = X_all_2d_non_na.to_numpy()
+    X_all_2d_non_na_reshape = X_all_2d_non_na_reshape.reshape(X_train.shape[0], X_train.shape[1], X_all_2d_non_na_reshape.shape[1])
+    X_all_2d_non_na_reshape = X_all_2d_non_na_reshape.reshape(X_all_2d_non_na_reshape.shape[0], X_all_2d_non_na_reshape.shape[1]*X_all_2d_non_na_reshape.shape[2])
+    # back to df
+    X_all_2d_non_na_reshape = pd.DataFrame(X_all_2d_non_na_reshape)
+    # name the columns but it is repeated 36 times
+    X_all_2d_non_na_reshape.columns = var_stat_all_x*(X_train.shape[1])
+
     if standardisation == False:
+        if different_shape == True:
+            return X_all_2d_non_na_reshape, y_max, y_mean, var_stat_all_x
         return X_all_2d_non_na, y_max, y_mean, var_stat_all_x
 
     else:
