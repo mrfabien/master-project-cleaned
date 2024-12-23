@@ -70,13 +70,17 @@ def OLD_split_storm_numbers(storm_numbers, test_valid_percentage=0.3, seed=42):
 
     return storm_all, storm_test, storm_valid
 
-def split_storm_numbers(storm_numbers, test_valid_percentage, seed_number):
+def split_storm_numbers(storm_numbers, test_valid_percentage, seed_number, type):
     # Ensure reproducibility
     random.seed(seed_number)
 
-    test_index_fixed = [6,29,38,45,48,66,86,87,93]
+    if type == 'index':
+
+        test_index_fixed = [6,29,38,45,48,66,86,87,93]
     # remove 1 to have the index of the storms
-    test_index_fixed = [x-1 for x in test_index_fixed]
+        test_index_fixed = [x-1 for x in test_index_fixed]
+    else:
+        test_index_fixed = [6,29,38,45,48,66,86,87,93]
 
     filtered_numbers = [x for x in storm_numbers if x not in test_index_fixed]
 
@@ -378,7 +382,7 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
 
     # NEW WAY
 
-    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_EU, 0.15, seed_number)
+    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_EU, 0.15, seed_number, 'index')
 
     # order the index of the storms
 
@@ -567,7 +571,7 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1
 
     # NEW WAY
 
-    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_non_EU, 0.15, seed_number)
+    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_non_EU, 0.15, seed_number, 'index')
 
     # order the index of the storms
 
