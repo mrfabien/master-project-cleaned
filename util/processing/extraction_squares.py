@@ -73,14 +73,15 @@ def OLD_split_storm_numbers(storm_numbers, test_valid_percentage=0.3, seed=42):
 def split_storm_numbers(storm_numbers, test_valid_percentage, seed_number, type):
     # Ensure reproducibility
     random.seed(seed_number)
-
+    if test_valid_percentage > 0.12:
+        print('The validation set is too large. It should be less than 0.13.')
+    print('To keep 50 storms in the training set, storms 45 and 87 are removed from the test set.')
     if type == 'index':
-
-        test_index_fixed = [6,29,38,45,48,66,86,87,93]
+        test_index_fixed = [6,29,38,48,66,86,93]
     # remove 1 to have the index of the storms
         test_index_fixed = [x-1 for x in test_index_fixed]
     else:
-        test_index_fixed = [6,29,38,45,48,66,86,87,93]
+        test_index_fixed = [6,29,38,48,66,86,93]
 
     filtered_numbers = [x for x in storm_numbers if x not in test_index_fixed]
 
