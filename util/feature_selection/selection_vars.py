@@ -67,7 +67,7 @@ def extract_timeseries_y(all_series='yes'):
 
     return df_y
 
-def feature_selection(df_X_all_vars, scaled_X, df_y, model):
+def feature_selection(df_X_all_vars, scaled_X, df_y, model, print_info=False):
     # Initialize the sequential feature selector
     sfs = SequentialFeatureSelector(
                                     model,  # Use the same model as before
@@ -89,7 +89,9 @@ def feature_selection(df_X_all_vars, scaled_X, df_y, model):
 
     # Get the names of the selected features
     selected_features = df_X_all_vars.columns[selected_indices]
-    print("Selected features:", selected_features)
+
+    if print_info==True:
+        print("Selected features:", selected_features)
     return selected_features
 
 def prepare_training_data(transposed_data, storm_index_training, updated_columns):
@@ -121,7 +123,7 @@ def prepare_training_data(transposed_data, storm_index_training, updated_columns
         X_train = X_train.drop(columns=['storm_number'])
     except KeyError:
         X_train = X_train.drop(columns=['storm_number_PCA_1'])
-        print('No storm_number column to drop, which is not fine')
+        #print('No storm_number column to drop, which is not fine')
     
     return X_train
 
