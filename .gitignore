@@ -6,3 +6,5 @@ test/*
 data/i10fg_dataset/*
 .vscode/*
 data/test/*
+data/climatology/old/*
+data/climatology/hourly_winter_season/*
