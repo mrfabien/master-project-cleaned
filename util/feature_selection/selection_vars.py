@@ -79,7 +79,7 @@ def feature_selection(df_X_all_vars, scaled_X, df_y, model, print_info=False):
     # Fit the selector
 
     try: 
-        df_y = df_y.to_numpy().ravel()
+        df_y = df_y.to_numpy()#.ravel()
     except:
         print('y is already a numpy array')
     sfs.fit(scaled_X, df_y)
