@@ -178,7 +178,7 @@ def process_storm_data(y_all_3d, y_all_3d_non_eu, number_of_steps_eu, number_of_
 
         print(f'EU dataset is 1st step in EU first, and non-EU dataset landfall step is 1st (meaning the step {number_of_steps_non_eu} hours before landfall is last).')
     
-    return eu_results[0], eu_results [1], eu_results[2], eu_results[3], non_eu_results[0], non_eu_results[1], non_eu_results[2], non_eu_results[3], eu_storms, non_eu_storms
+    return eu_results[0], eu_results [1], eu_results[2], eu_results[3], non_eu_results[0], non_eu_results[1], non_eu_results[2], non_eu_results[3], eu_storms, non_eu_storms, common_storms
 
 def tif_to_dataframe(tif_file, info_print = False,  date_climatology=None, band=1):
     """

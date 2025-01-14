@@ -287,8 +287,8 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
                     for stat in stats:
                         df = pd.read_csv(f'{path_data}/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv') #locals()[f'mean_{var_name}_{level}']
                         if df.shape[0] > 0:  # Check if the csv is not empty
-                            storm_series = df.loc[:, '0'].values
-                            storm_data_y.append(storm_series)
+                            storm_series_y = df.loc[:, '0'].values
+                            storm_data_y.append(storm_series_y)
                         else:
                             #print(f"Storm {storm_idx} not found in {var_name} for level {level}")
                             storm_data_y.append(np.array([]))  # Append an empty array if the storm index does not exist
@@ -315,7 +315,7 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
             print(f"Storm didn't land on EU soil, so it will be skipped.")
         else:
             storm_data_padded = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data]
-            storm_data_padded_y = [np.pad(series, (0, max_time_steps - len(series)), 'constant', constant_values=np.nan) for series in storm_data_y]
+            storm_data_padded_y = [np.pad(series_y, (0, max_time_steps - len(series_y)), 'constant', constant_values=np.nan) for series_y in storm_data_y]
 
         #storm_data_padded = []
         #for series in storm_data:
@@ -383,7 +383,7 @@ def X_y_datasets_EU(name_of_variables, storm_dates, path_data, path_tracks_1h_EU
 
     # NEW WAY
 
-    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_EU, 0.15, seed_number, 'index')
+    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_EU, 0.12, seed_number, 'index')
 
     # order the index of the storms
 
@@ -448,8 +448,8 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1
                     for stat in stats:
                         df = pd.read_csv(f'{path_data}/{dataset}/{var_name}/storm_{storm_idx}/{stat}_{storm_idx}_{level}.csv')#{path}
                         if df.shape[0] > 0:  # Check if the csv is not empty
-                            storm_series = df.loc[:, '0'].values
-                            storm_data_y.append(storm_series)
+                            storm_series_y = df.loc[:, '0'].values
+                            storm_data_y.append(storm_series_y)
                         else:
                             #print(f"Storm {storm_idx} not found in {var_name} for level {level}")
                             storm_data_y.append(np.array([]))  # Append an empty array if the storm index does not exist
@@ -572,7 +572,7 @@ def X_y_datasets_non_EU(name_of_variables, storm_dates, path_data, path_tracks_1
 
     # NEW WAY
 
-    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_non_EU, 0.15, seed_number, 'index')
+    storm_index_training, storm_index_test, storm_index_validation = split_storm_numbers(index_storm_non_EU, 0.12, seed_number, 'index')
 
     # order the index of the storms
 
