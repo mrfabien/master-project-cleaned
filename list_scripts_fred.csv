@@ -1,0 +1,23 @@
+All notebooks have a operating_system var or similar, change it to curnagl
+
+Time series and filtering is done with the same script :
+- cleaner_version/pre_processing/i10fg_dataset/time_series_1h_creation.ipynb
+
+Dataset of climatology is created with : 
+- cleaner_version/pre_processing/climatology/dm_climato_with_storms_winter.sh
+Configuration file is : 
+- cleaner_version/pre_processing/climatology/config_climato_winter.txt
+Then use, at section daily maxima:
+- cleaner_version/pre_processing/climatology/ECDF_climatology.ipynb 
+
+For the GEV, use 
+- cleaner_version/pre_processing/GEV/-log(1-CDF)_dm_winter.ipynb
+Don't change without_storms = ''
+But you can adapt these:
+from_scratch = False (takes the wind data per cluster from folder data/climatology_dm_winter_per_cluster instead of extracting it from the climatology files which takes a lot longer)
+type_of_climate = 'dm' (dm daily max, mm, monthly max, hm, hourly max)
+To save the final results, execute the last cell, (there's a repetition of where it is saved, you can change the emplacement)
+
+For the KS test, use:
+- cleaner_version/pre_processing/GEV/Statistical_fitness_all.ipynb
+Run only the 3 first cells to have the different graphs.
